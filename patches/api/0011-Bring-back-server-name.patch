@@ -5,10 +5,10 @@ Subject: [PATCH] Bring back server name
 
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index c551010f84ac5d3ebc626c253a8f8282924152c4..a2a97c3ce3c7e7baf67f7f70d9ac2d3dc048075a 100644
+index c093ba024cfd951be1afc4100d899ed8f70ab003..83bd664304e972c04fb21ebad857feec7062485d 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -2118,4 +2118,15 @@ public final class Bukkit {
+@@ -2322,4 +2322,15 @@ public final class Bukkit {
      public static Server.Spigot spigot() {
          return server.spigot();
      }
@@ -25,12 +25,12 @@ index c551010f84ac5d3ebc626c253a8f8282924152c4..a2a97c3ce3c7e7baf67f7f70d9ac2d3d
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 1d1fe3b7341629695de62ff3110b5563f6daee39..6daf552c9c528a8bacab7db7a61254312d8e1db6 100644
+index c0b2d372ea5f86779d1f0eda79e87a2ce08af2bb..843b5c66f38864c5bb27229133e56d71b83dd91e 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1849,4 +1849,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
-     @NotNull
-     io.papermc.paper.datapack.DatapackManager getDatapackManager();
+@@ -2025,4 +2025,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
      // Paper end
 +
 +    // Purpur start

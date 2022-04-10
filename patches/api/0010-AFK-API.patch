@@ -4,13 +4,42 @@ Date: Sat, 10 Aug 2019 22:19:56 -0500
 Subject: [PATCH] AFK API
 
 
-diff --git a/src/main/java/net/pl3x/purpur/event/PlayerAFKEvent.java b/src/main/java/net/pl3x/purpur/event/PlayerAFKEvent.java
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 19ae113caade6dff786c0e94b2d8a4bf0d92742c..c7ccccd264286433548931aa4e92fb71b4f371d8 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2680,5 +2680,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @return True if Player uses Purpur Client
+      */
+     public boolean usesPurpurClient();
++
++    /**
++     * Check if player is AFK
++     *
++     * @return True if AFK
++     */
++    boolean isAfk();
++
++    /**
++     * Set player as AFK
++     *
++     * @param setAfk Whether to set AFK or not
++     */
++    void setAfk(boolean setAfk);
++
++    /**
++     * Reset the idle timer back to 0
++     */
++    void resetIdleTimer();
+     // Purpur end
+ }
+diff --git a/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java b/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0c8b3e5e4ba412624357ea5662a78862bd9fc4be
+index 0000000000000000000000000000000000000000..25e92af7710316ed2afedf846a59dbd672869b51
 --- /dev/null
-+++ b/src/main/java/net/pl3x/purpur/event/PlayerAFKEvent.java
++++ b/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java
 @@ -0,0 +1,70 @@
-+package net.pl3x.purpur.event;
++package org.purpurmc.purpur.event;
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
@@ -80,32 +109,3 @@ index 0000000000000000000000000000000000000000..0c8b3e5e4ba412624357ea5662a78862
 +        return handlers;
 +    }
 +}
-diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 56ffd7b4d791e5656447d11a47446a4759e775e3..6619d9109089d427e3eaec1f8c18dce23d6b7802 100644
---- a/src/main/java/org/bukkit/entity/Player.java
-+++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2303,5 +2303,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @return True if Player uses Purpur Client
-      */
-     public boolean usesPurpurClient();
-+
-+    /**
-+     * Check if player is AFK
-+     *
-+     * @return True if AFK
-+     */
-+    boolean isAfk();
-+
-+    /**
-+     * Set player as AFK
-+     *
-+     * @param setAfk Whether to set AFK or not
-+     */
-+    void setAfk(boolean setAfk);
-+
-+    /**
-+     * Reset the idle timer back to 0
-+     */
-+    void resetIdleTimer();
-     // Purpur end
- }
