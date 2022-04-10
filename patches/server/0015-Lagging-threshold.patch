@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Tue, 23 Jul 2019 10:07:16 -0500
+Subject: [PATCH] Lagging threshold
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1cb6c989a0b21df7dff72062550daa09721d7687..4d89c9de4b4aae4452750fb941a2e610b8834039 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -304,6 +304,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
+     private static final int SAMPLE_INTERVAL = 20; // Paper
+     public final double[] recentTps = new double[ 3 ];
++    public boolean lagging = false; // Purpur
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
+     public static long currentTickLong = 0L; // Paper
+@@ -1247,6 +1248,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                         this.recentTps[1] = tps5.getAverage();
+                         this.recentTps[2] = tps15.getAverage();
+                         // Paper end
++                        lagging = recentTps[0] < org.purpurmc.purpur.PurpurConfig.laggingThreshold; // Purpur
+                         tickSection = curTime;
+                     }
+                     // Spigot end
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 196f586380bd458c3f2c47a84dc7e2a36afb94aa..98f14ba75b0fed27effc5259eaf62c3fa372df26 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2823,5 +2823,10 @@ public final class CraftServer implements Server {
+     public String getServerName() {
+         return this.getProperties().serverName;
+     }
++
++    @Override
++    public boolean isLagging() {
++        return getServer().lagging;
++    }
+     // Purpur end
+ }
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index 35797b7ed354c08066ecff563bba2c38265421bb..21e072e105a824e97fa713c72dd0b7bca1229870 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -188,6 +188,11 @@ public class PurpurConfig {
+         if (!co.aikar.timings.TimingsManager.hiddenConfigs.contains("server-ip")) co.aikar.timings.TimingsManager.hiddenConfigs.add("server-ip");
+     }
+ 
++    public static double laggingThreshold = 19.0D;
++    private static void tickLoopSettings() {
++        laggingThreshold = getDouble("settings.lagging-threshold", laggingThreshold);
++    }
++
+     public static int barrelRows = 3;
+     public static boolean enderChestSixRows = false;
+     public static boolean enderChestPermissionRows = false;

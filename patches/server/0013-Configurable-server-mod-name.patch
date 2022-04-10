@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Mar 2020 11:47:39 -0500
+Subject: [PATCH] Configurable server mod name
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 973ea150c2f8ac136736b4ae9f505491e2fc80c2..1cb6c989a0b21df7dff72062550daa09721d7687 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1710,7 +1710,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @DontObfuscate
+     public String getServerModName() {
+-        return "Purpur"; // Purpur - Purpur > // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return org.purpurmc.purpur.PurpurConfig.serverModName; // Purpur - Purpur > // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
+     }
+ 
+     public SystemReport fillSystemReport(SystemReport details) {
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index fde15dee7633bad9582fe5d26eee0badf17477cd..c428c332cbb9f632b36bc4b6bf7d0767a16e350a 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -170,6 +170,11 @@ public class PurpurConfig {
+         afkTabListSuffix = getString("settings.messages.afk-tab-list-suffix", afkTabListSuffix);
+     }
+ 
++    public static String serverModName = "Purpur";
++    private static void serverModName() {
++        serverModName = getString("settings.server-mod-name", serverModName);
++    }
++
+     private static void timingsSettings() {
+         if (version < 18) {
+             String oldVal = getString("settings.timings.url", "https://timings.pl3x.net");

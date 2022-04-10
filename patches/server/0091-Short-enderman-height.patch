@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 10 Aug 2020 21:46:22 -0500
+Subject: [PATCH] Short enderman height
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 4236c9dfa0be6fa8ad2f3e32d7f65f1b722c4e60..7307b3208f1b4ffe31fc4e6f73ac7264eb95849a 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -279,7 +279,8 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+     private Component description;
+     @Nullable
+     private ResourceLocation lootTable;
+-    private final EntityDimensions dimensions;
++    private EntityDimensions dimensions; // Purpur - remove final
++    public void setDimensions(EntityDimensions dimensions) { this.dimensions = dimensions; } // Purpur
+ 
+     private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder type) { // CraftBukkit - decompile error
+         return (EntityType) Registry.register(Registry.ENTITY_TYPE, id, (EntityType<T>) type.build(id)); // CraftBukkit - decompile error
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index cff1fc69f75c923ecb162b22dc0ec5bb5c2fbfe0..37e71377ead8d3fd98ff6f6d643d31042944b43f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -399,6 +399,7 @@ public class EnderMan extends Monster implements NeutralMob {
+         if (this.isInvulnerableTo(source)) {
+             return false;
+         } else if (getRider() != null) { return super.hurt(source, amount); // Purpur - no teleporting on damage
++        } else if (org.purpurmc.purpur.PurpurConfig.endermanShortHeight && source == DamageSource.IN_WALL) { return false; // Purpur - no suffocation damage if short height
+         } else if (source instanceof IndirectEntityDamageSource) {
+             Entity entity = source.getDirectEntity();
+             boolean flag;
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index 4f8a4b053a996589bf6c9f9107da3cabc8c791da..f600030f2225abc6e21a0e8a33300c27863112d1 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -239,6 +239,12 @@ public class PurpurConfig {
+         enderChestPermissionRows = getBoolean("settings.blocks.ender_chest.use-permissions-for-rows", enderChestPermissionRows);
+     }
+ 
++    public static boolean endermanShortHeight = false;
++    private static void entitySettings() {
++        endermanShortHeight = getBoolean("settings.entity.enderman.short-height", endermanShortHeight);
++        if (endermanShortHeight) EntityType.ENDERMAN.setDimensions(EntityDimensions.scalable(0.6F, 1.9F));
++    }
++
+     public static boolean allowWaterPlacementInTheEnd = true;
+     private static void allowWaterPlacementInEnd() {
+         allowWaterPlacementInTheEnd = getBoolean("settings.allow-water-placement-in-the-end", allowWaterPlacementInTheEnd);
