@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Tue, 28 Dec 2021 10:11:31 -0600
+Subject: [PATCH] Option to prevent spiders from climbing world border
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 3d2e00dd971b21848679c4e386e6357592320dd0..44e693e88e03cd34ac0fd293e611a0ebf1221f53 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -239,6 +239,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     public boolean horizontalCollision;
+     public boolean verticalCollision;
+     public boolean minorHorizontalCollision;
++    public boolean collidingWithWorldBorder; // Purpur
+     public boolean hurtMarked;
+     protected Vec3 stuckSpeedMultiplier;
+     @Nullable
+@@ -1321,7 +1322,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+             io.papermc.paper.util.CollisionUtil.getCollisions(world, this, collisionBox, potentialCollisions, false, true,
+                 false, false, null, null);
+ 
+-            if (io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) {
++            if (this.collidingWithWorldBorder = io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) { // Purpur
+                 io.papermc.paper.util.CollisionUtil.addBoxesToIfIntersects(world.getWorldBorder().getCollisionShape(), collisionBox, potentialCollisions);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 177f9fe0d0a10e5d3644805751f2050fe984fde7..07dc3b10a275895f23fcf50720ef25faea358c58 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -118,7 +118,7 @@ public class Spider extends Monster {
+     public void tick() {
+         super.tick();
+         if (!this.level.isClientSide) {
+-            this.setClimbing(this.horizontalCollision);
++            this.setClimbing(this.horizontalCollision && (this.level.purpurConfig.spiderCanClimbWorldBorder || !this.collidingWithWorldBorder)); // Purpur
+         }
+ 
+     }
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+index c528e2b9f9bb2879f54658bd459722890b1a215d..c684f8e65ae8e32c85d511030358c5b1cd56c003 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+@@ -2462,6 +2462,7 @@ public class PurpurWorldConfig {
+     public double spiderMaxHealth = 16.0D;
+     public boolean spiderTakeDamageFromWater = false;
+     public boolean spiderAlwaysDropExp = false;
++    public boolean spiderCanClimbWorldBorder = true;
+     private void spiderSettings() {
+         spiderRidable = getBoolean("mobs.spider.ridable", spiderRidable);
+         spiderRidableInWater = getBoolean("mobs.spider.ridable-in-water", spiderRidableInWater);
+@@ -2474,6 +2475,7 @@ public class PurpurWorldConfig {
+         spiderMaxHealth = getDouble("mobs.spider.attributes.max_health", spiderMaxHealth);
+         spiderTakeDamageFromWater = getBoolean("mobs.spider.takes-damage-from-water", spiderTakeDamageFromWater);
+         spiderAlwaysDropExp = getBoolean("mobs.spider.always-drop-exp", spiderAlwaysDropExp);
++        spiderCanClimbWorldBorder = getBoolean("mobs.spider.can-climb-world-border", spiderCanClimbWorldBorder);
+     }
+ 
+     public boolean strayRidable = false;

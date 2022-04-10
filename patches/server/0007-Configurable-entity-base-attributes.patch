@@ -1,0 +1,2764 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 10 Dec 2020 16:44:54 -0600
+Subject: [PATCH] Configurable entity base attributes
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 622bc5a8e7e105ee9368f67be3ae7740ecaaf256..27d95f88ef904402c1277818734310c9e37f9cde 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -149,7 +149,7 @@ import org.bukkit.plugin.PluginManager;
+ // CraftBukkit end
+ 
+ public abstract class Entity implements Nameable, EntityAccess, CommandSource, io.papermc.paper.util.KeyedObject { // Paper
+-
++    protected static javax.script.ScriptEngine scriptEngine = new javax.script.ScriptEngineManager().getEngineByName("rhino"); // Purpur
+     // CraftBukkit start
+     private static final int CURRENT_LEVEL = 2;
+     public boolean preserveMotion = true; // Paper - keep initial motion on first setPositionRotation
+diff --git a/src/main/java/net/minecraft/world/entity/GlowSquid.java b/src/main/java/net/minecraft/world/entity/GlowSquid.java
+index 912767ed261e44c0192c5a07e2c2026110988816..da00dcb474bec9ac8b8fc3ecf530fca154348059 100644
+--- a/src/main/java/net/minecraft/world/entity/GlowSquid.java
++++ b/src/main/java/net/minecraft/world/entity/GlowSquid.java
+@@ -38,6 +38,11 @@ public class GlowSquid extends Squid {
+     public boolean isControllable() {
+         return level.purpurConfig.glowSquidControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.glowSquidMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index c7a6756521cc7c188910304f62a579b6724853e2..e25bf8d2b00fab28aefc0587af5e05cb45c4e352 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -283,6 +283,7 @@ public abstract class LivingEntity extends Entity {
+         this.useItem = ItemStack.EMPTY;
+         this.lastClimbablePos = Optional.empty();
+         this.attributes = new AttributeMap(DefaultAttributes.getSupplier(type), this); // Purpur
++        this.initAttributes(); // Purpur
+         this.craftAttributes = new CraftAttributeMap(this.attributes); // CraftBukkit
+         // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
+         this.entityData.set(LivingEntity.DATA_HEALTH_ID, (float) this.getAttribute(Attributes.MAX_HEALTH).getValue());
+@@ -298,6 +299,8 @@ public abstract class LivingEntity extends Entity {
+         this.brain = this.makeBrain(new Dynamic(dynamicopsnbt, (net.minecraft.nbt.Tag) dynamicopsnbt.createMap((Map) ImmutableMap.of(dynamicopsnbt.createString("memories"), (net.minecraft.nbt.Tag) dynamicopsnbt.emptyMap()))));
+     }
+ 
++    protected void initAttributes() {}// Purpur
++
+     public Brain<?> getBrain() {
+         return this.brain;
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index 7814f9825ef1956c9f327bee8a0c268cda6eef21..1fbe37705556e62752be4719994e1cde96f3434d 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -91,6 +91,18 @@ public class Bat extends AmbientCreature {
+             setDeltaMovement(mot.scale(0.9D));
+         }
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.batMaxHealth);
++        this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(this.level.purpurConfig.batFollowRange);
++        this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(this.level.purpurConfig.batKnockbackResistance);
++        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level.purpurConfig.batMovementSpeed);
++        this.getAttribute(Attributes.FLYING_SPEED).setBaseValue(this.level.purpurConfig.batFlyingSpeed);
++        this.getAttribute(Attributes.ARMOR).setBaseValue(this.level.purpurConfig.batArmor);
++        this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(this.level.purpurConfig.batArmorToughness);
++        this.getAttribute(Attributes.ATTACK_KNOCKBACK).setBaseValue(this.level.purpurConfig.batAttackKnockback);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index fea80e6ed278bff6cd8773abe1a7def96b3a7c97..4fc7c9c2fd2b9c083bd08fb4da9355279a94d287 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -215,6 +215,11 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+             setDeltaMovement(mot.scale(0.9D));
+         }
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.beeMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cat.java b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+index 495e3b17cc1c5b5d502a172a9b6bd8c95a7b2064..3a8130f7bbf67a0426c8a2f4785c9865dc0159ce 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+@@ -145,6 +145,11 @@ public class Cat extends TamableAnimal {
+         setLying(false);
+         setRelaxStateOne(false);
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.catMaxHealth);
++    }
+     // Purpur end
+ 
+     public ResourceLocation getResourceLocation() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Chicken.java b/src/main/java/net/minecraft/world/entity/animal/Chicken.java
+index 46ac6d4559be25914ebb24684fbeb33f471e226d..6f0a3e303d7b4d95302f477eef0d2590b89bef42 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Chicken.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Chicken.java
+@@ -67,6 +67,11 @@ public class Chicken extends Animal {
+     public boolean isControllable() {
+         return level.purpurConfig.chickenControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.chickenMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cod.java b/src/main/java/net/minecraft/world/entity/animal/Cod.java
+index 545ef4ab037b3173cc7377ad8147a44a2050d56f..861727f150f28a508d3b1c7067d410f0d696aa89 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cod.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cod.java
+@@ -28,6 +28,11 @@ public class Cod extends AbstractSchoolingFish {
+     public boolean isControllable() {
+         return level.purpurConfig.codControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.codMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+index 8f046fb76b6967e72abde523ffb790e0f46b80e0..dd4d5e2e7cbfed18cf3b4664dbe08eaf9d95f61e 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+@@ -55,6 +55,11 @@ public class Cow extends Animal {
+     public boolean isControllable() {
+         return level.purpurConfig.cowControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.cowMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+index ca8c0651642500a0aeded005a446eebbca7aa399..af2a46699fc2520a796a68f77c12ff6479d87e31 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+@@ -159,6 +159,11 @@ public class Dolphin extends WaterAnimal {
+         }
+         return false;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.dolphinMaxHealth);
++    }
+     // Purpur end
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+index 7ce5908d439afd49bdb5e7ea629e7544e7a7ed18..4754ea923d3bbee130ec8eecf8e51b99e561c3e6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+@@ -175,6 +175,11 @@ public class Fox extends Animal {
+         super.onDismount(rider);
+         setCanPickUpLoot(true);
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.foxMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/IronGolem.java b/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
+index ff3f3a1a1e5ac741e00fee71d213feea885b44d6..4c9ef9c044fbc427ad1ffb2b0f3b1ceda379ae00 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
++++ b/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
+@@ -85,6 +85,11 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
+     public boolean isControllable() {
+         return level.purpurConfig.ironGolemControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.ironGolemMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+index 355bb96e6395749ea94afe39d66b9f93fee1bbfb..94550588f4e40da3f43ecd227e044fcfafec6084 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+@@ -80,6 +80,11 @@ public class MushroomCow extends Cow implements Shearable {
+     public boolean isControllable() {
+         return level.purpurConfig.mooshroomControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.mooshroomMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Ocelot.java b/src/main/java/net/minecraft/world/entity/animal/Ocelot.java
+index 2afcac92a3c5a57cc3b87ffe28dc867030adbe80..14897eea8446a257bbcb48cbcfd1828ab9ad0bec 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Ocelot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Ocelot.java
+@@ -84,6 +84,11 @@ public class Ocelot extends Animal {
+     public boolean isControllable() {
+         return level.purpurConfig.ocelotControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.ocelotMaxHealth);
++    }
+     // Purpur end
+ 
+     public boolean isTrusting() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 92a3c99711f7e590563e278e575914e0bd65da93..880093a2c547c49fe29aacef87320082dbd38168 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -131,6 +131,12 @@ public class Panda extends Animal {
+         eat(false);
+         setOnBack(false);
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.pandaMaxHealth);
++        setAttributes();
++    }
+     // Purpur end
+ 
+     @Override
+@@ -623,7 +629,10 @@ public class Panda extends Animal {
+ 
+     public void setAttributes() {
+         if (this.isWeak()) {
+-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0D);
++            // Purpur start
++            net.minecraft.world.entity.ai.attributes.AttributeInstance maxHealth = this.getAttribute(Attributes.MAX_HEALTH);
++            maxHealth.setBaseValue(maxHealth.getValue() / 2);
++            // Purpur end
+         }
+ 
+         if (this.isLazy()) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Parrot.java b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+index d3b5b37347f1a52ccf58f6cb61aab454b1d8cb35..b2963b0064c6f01adc1d8a54b7c5687c79ba6a73 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Parrot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+@@ -186,6 +186,11 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+             setDeltaMovement(mot.scale(0.9D));
+         }
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.parrotMaxHealth);
++    }
+     // Purpur end
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Pig.java b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+index c4c0d7958156b0d587999032c8f9fac9fd689c72..62a1e63fb6ca80e165db46c4d03e28815196aaff 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Pig.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+@@ -79,6 +79,11 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
+     public boolean isControllable() {
+         return level.purpurConfig.pigControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.pigMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/PolarBear.java b/src/main/java/net/minecraft/world/entity/animal/PolarBear.java
+index 590a8358846fc89a3c33ca52c70a8471f4999a01..b49ea0516488e203cae91f91a084ba6eb3eba9ea 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/PolarBear.java
++++ b/src/main/java/net/minecraft/world/entity/animal/PolarBear.java
+@@ -94,6 +94,11 @@ public class PolarBear extends Animal implements NeutralMob {
+         }
+         return false;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.polarBearMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Pufferfish.java b/src/main/java/net/minecraft/world/entity/animal/Pufferfish.java
+index 6f27a07b62f69350b1cee5f0170a7af1a3b99b9d..e42a7552d17f883b7116a180e408880c5fdb29d0 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Pufferfish.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Pufferfish.java
+@@ -60,6 +60,11 @@ public class Pufferfish extends AbstractFish {
+     public boolean isControllable() {
+         return level.purpurConfig.pufferfishControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.pufferfishMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+index f155cf36c59979464a0edcfd31d5e8433df60607..16f5c4425cc6ff3044c1d076030775e88a3e0a2c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+@@ -135,6 +135,11 @@ public class Rabbit extends Animal {
+         }
+         wasOnGround = onGround;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.rabbitMaxHealth);
++    }
+     // Purpur end
+ 
+     // CraftBukkit start - code from constructor
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Salmon.java b/src/main/java/net/minecraft/world/entity/animal/Salmon.java
+index 59cb21bc3166f4cc77b962c253ed786fd04090de..3873fb0e2d95973397f9a23dc363f7a65a1edfe6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Salmon.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Salmon.java
+@@ -28,6 +28,11 @@ public class Salmon extends AbstractSchoolingFish {
+     public boolean isControllable() {
+         return level.purpurConfig.salmonControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.salmonMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Sheep.java b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+index e267e7b3b4ba96f5423327a336088942dcb4e14c..9d6765e2bd6bfdd39728bdd14cabbe4bf33d96ac 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Sheep.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+@@ -131,6 +131,11 @@ public class Sheep extends Animal implements Shearable {
+     public boolean isControllable() {
+         return level.purpurConfig.sheepControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.sheepMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java b/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
+index 4fc9b738d6e33fb804276c5897aed3ab2b0040c9..d3e8058e2fc45368e816482df178aa533c6edc0c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
++++ b/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
+@@ -69,6 +69,11 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
+     public boolean isControllable() {
+         return level.purpurConfig.snowGolemControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.snowGolemMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Squid.java b/src/main/java/net/minecraft/world/entity/animal/Squid.java
+index d1ec00edb1782993b47a0837171fa80b8d1cb0b7..565276f556e2c7cf465b6bed53bdeac5ce4c4312 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Squid.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Squid.java
+@@ -76,6 +76,11 @@ public class Squid extends WaterAnimal {
+         vector.setX(cos * x - sine * z);
+         vector.setZ(sine * x + cos * z);
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.squidMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/TropicalFish.java b/src/main/java/net/minecraft/world/entity/animal/TropicalFish.java
+index 3bb43fac9b3405433b9d416b5154a5d49f673fc7..9979a1c75ad6d420575b80413a7b49c51c5ae5c1 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/TropicalFish.java
++++ b/src/main/java/net/minecraft/world/entity/animal/TropicalFish.java
+@@ -65,6 +65,11 @@ public class TropicalFish extends AbstractSchoolingFish {
+     public boolean isControllable() {
+         return level.purpurConfig.tropicalFishControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.tropicalFishMaxHealth);
++    }
+     // Purpur end
+ 
+     public static String getPredefinedName(int variant) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+index 0148a83cbd1e60be227f500e3f3bf3a89632b556..89a95622465a203efcecaf4c46e5b5e0419f84d3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+@@ -101,6 +101,11 @@ public class Turtle extends Animal {
+     public boolean isControllable() {
+         return level.purpurConfig.turtleControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.turtleMaxHealth);
++    }
+     // Purpur end
+ 
+     public void setHomePos(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Wolf.java b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
+index 5a7a8e3b31f4598216ebeaef12cfb377cfbd771b..0336bc717b22a2747cb233268dc5ececab56cee2 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Wolf.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
+@@ -119,6 +119,11 @@ public class Wolf extends TamableAnimal implements NeutralMob {
+     public boolean isControllable() {
+         return level.purpurConfig.wolfControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.wolfMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+index 80ee4883d72d8beaa73865740eec8fc20becd0af..12a227990593c471238054570ae9a103f4da5d84 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
++++ b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+@@ -117,6 +117,11 @@ public class Axolotl extends Animal implements LerpingModel, Bucketable {
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.axolotlMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 07e2a7839d8aaf2915c9b8ba74653870f11def88..0dca918e98182faf90f09d2ecf8985796d7b2fb5 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -89,6 +89,11 @@ public class Goat extends Animal {
+     public boolean isControllable() {
+         return level.purpurConfig.goatControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.goatMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index e73045a7046850f10d79809c53b6cdd9ceb8775a..c6ee03e25adac9ecebd1e1718588b84f57184ce9 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -125,6 +125,32 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+     public boolean isRidable() {
+         return false; // vanilla handles
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.generateRandomMaxHealth());
++        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.generateRandomSpeed());
++        this.getAttribute(Attributes.JUMP_STRENGTH).setBaseValue(this.generateRandomJumpStrength());
++    }
++
++    protected double generateRandomMaxHealth(double min, double max) {
++        if (min == max) return min;
++        int diff = Mth.floor(max - min);
++        double base = max - diff;
++        int first = Mth.floor((double) diff / 2);
++        int rest = diff - first;
++        return base + random.nextInt(first + 1) + random.nextInt(rest + 1);
++    }
++
++    protected double generateRandomJumpStrength(double min, double max) {
++        if (min == max) return min;
++        return min + (max - min) * this.random.nextDouble();
++    }
++
++    protected double generateRandomSpeed(double min, double max) {
++        if (min == max) return min;
++        return min + (max - min) * this.random.nextDouble();
++    }
+     // Purpur end
+ 
+     @Override
+@@ -1149,7 +1175,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+             entityData = new AgeableMob.AgeableMobGroupData(0.2F);
+         }
+ 
+-        this.randomizeAttributes();
++        //this.randomizeAttributes(); // Purpur - replaced by initAttributes()
+         return super.finalizeSpawn(world, difficulty, spawnReason, (SpawnGroupData) entityData, entityNbt);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Donkey.java b/src/main/java/net/minecraft/world/entity/animal/horse/Donkey.java
+index db4d5d5e38a44f85c343b632c914f2252c30a3c3..f0da5d107ddb2987ccc89f880ddba5e79fadf0c5 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Donkey.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Donkey.java
+@@ -20,6 +20,21 @@ public class Donkey extends AbstractChestedHorse {
+     public boolean rideableUnderWater() {
+         return level.purpurConfig.donkeyRidableInWater;
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.donkeyMaxHealthMin, this.level.purpurConfig.donkeyMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.donkeyJumpStrengthMin, this.level.purpurConfig.donkeyJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.donkeyMovementSpeedMin, this.level.purpurConfig.donkeyMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Horse.java b/src/main/java/net/minecraft/world/entity/animal/horse/Horse.java
+index a91152df3d443d70b1aa9aff97b3746e0331c0a6..9f7203608e15fdce1bfbaf419838768763d61378 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Horse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Horse.java
+@@ -44,6 +44,21 @@ public class Horse extends AbstractHorse {
+     public boolean rideableUnderWater() {
+         return level.purpurConfig.horseRidableInWater;
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.horseMaxHealthMin, this.level.purpurConfig.horseMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.horseJumpStrengthMin, this.level.purpurConfig.horseJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.horseMovementSpeedMin, this.level.purpurConfig.horseMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+index 7059b66fe81ffd3f757b595ae107ec69222db8e7..98119cf72e7d808d9f3b0ac808c0f286990d2279 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -116,6 +116,21 @@ public class Llama extends AbstractChestedHorse implements RangedAttackMob {
+     public boolean isSaddled() {
+         return super.isSaddled() || (isTamed() && getSwag() != null);
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.llamaMaxHealthMin, this.level.purpurConfig.llamaMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.llamaJumpStrengthMin, this.level.purpurConfig.llamaJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.llamaMovementSpeedMin, this.level.purpurConfig.llamaMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     public boolean isTraderLlama() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Mule.java b/src/main/java/net/minecraft/world/entity/animal/horse/Mule.java
+index a67061b875468777ee6256c0b28894c62ebb926c..1ba32a3ba56974425762026026d1e5ba21540b3b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Mule.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Mule.java
+@@ -19,6 +19,21 @@ public class Mule extends AbstractChestedHorse {
+     public boolean rideableUnderWater() {
+         return level.purpurConfig.muleRidableInWater;
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.muleMaxHealthMin, this.level.purpurConfig.muleMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.muleJumpStrengthMin, this.level.purpurConfig.muleJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.muleMovementSpeedMin, this.level.purpurConfig.muleMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
+index 235dae1b47641fb69e6b34e419797a1a8bf499f2..3c3be1a40f04def3f2ffb6567fa5be0581b5608d 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
+@@ -35,6 +35,21 @@ public class SkeletonHorse extends AbstractHorse {
+     public boolean isTamed() {
+         return true;
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.skeletonHorseMaxHealthMin, this.level.purpurConfig.skeletonHorseMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.skeletonHorseJumpStrengthMin, this.level.purpurConfig.skeletonHorseJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.skeletonHorseMovementSpeedMin, this.level.purpurConfig.skeletonHorseMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+index a4a88be0cbf94b633f486ce57d4fccd38002ac9f..89f3c480d2e8cc28bb26fcd65a5a51a652e7365a 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+@@ -47,6 +47,21 @@ public class TraderLlama extends Llama {
+     public boolean isSaddled() {
+         return super.isSaddled() || isTamed();
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.traderLlamaMaxHealthMin, this.level.purpurConfig.traderLlamaMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.traderLlamaJumpStrengthMin, this.level.purpurConfig.traderLlamaJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.traderLlamaMovementSpeedMin, this.level.purpurConfig.traderLlamaMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/ZombieHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/ZombieHorse.java
+index 77d05979331af91a1fbe619d1c26fa883146add8..48b72eb4051d612648a1978b38299c0c37a3a289 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/ZombieHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/ZombieHorse.java
+@@ -32,6 +32,21 @@ public class ZombieHorse extends AbstractHorse {
+     public boolean isTamed() {
+         return true;
+     }
++
++    @Override
++    public float generateRandomMaxHealth() {
++        return (float) generateRandomMaxHealth(this.level.purpurConfig.zombieHorseMaxHealthMin, this.level.purpurConfig.zombieHorseMaxHealthMax);
++    }
++
++    @Override
++    public double generateRandomJumpStrength() {
++        return generateRandomJumpStrength(this.level.purpurConfig.zombieHorseJumpStrengthMin, this.level.purpurConfig.zombieHorseJumpStrengthMax);
++    }
++
++    @Override
++    public double generateRandomSpeed() {
++        return generateRandomSpeed(this.level.purpurConfig.zombieHorseMovementSpeedMin, this.level.purpurConfig.zombieHorseMovementSpeedMax);
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 9846b882ae67131f3602845419c52c1350a214ce..4e44be78614107932af183dae144a21b0b260c97 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -159,6 +159,11 @@ public class EnderDragon extends Mob implements Enemy {
+     public double getMaxY() {
+         return level.purpurConfig.enderDragonMaxY;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.enderDragonMaxHealth);
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 4b541ebd4e9d0ef178aacd3006393ff114a30e79..8480ebae938abd4f11ad82fd11e3a5ad405aa180 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -213,6 +213,11 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+         skull.setPosRaw(headX, headY, headZ);
+         level.addFreshEntity(skull);
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.witherMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+@@ -417,7 +422,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+ 
+             this.setInvulnerableTicks(i);
+             if (this.tickCount % 10 == 0) {
+-                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
++                this.heal(this.getMaxHealth() / 33, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit // Purpur
+             }
+ 
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Blaze.java b/src/main/java/net/minecraft/world/entity/monster/Blaze.java
+index 6454992aa70e1476eaea67a8d9a1c27ab66f088d..1fc653194718eb4698450af5d1865a6da090c76d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Blaze.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Blaze.java
+@@ -72,6 +72,11 @@ public class Blaze extends Monster {
+             setDeltaMovement(mot.scale(0.9D));
+         }
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.blazeMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/CaveSpider.java b/src/main/java/net/minecraft/world/entity/monster/CaveSpider.java
+index 790d4abbc8e0b288e20e72e63f8190e938e2fecb..b9ee6fdaad09c92fdeea2e5be606818278a77c21 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/CaveSpider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/CaveSpider.java
+@@ -43,6 +43,11 @@ public class CaveSpider extends Spider {
+     public boolean isControllable() {
+         return level.purpurConfig.caveSpiderControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.caveSpiderMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 3451d4b2427978c8ff2893fad9f2c0cfc8c5f472..415df99f90ce63f13a89cfd02ee594d280f01785 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -138,6 +138,11 @@ public class Creeper extends Monster implements PowerableMob {
+         }
+         return getForwardMot() == 0 && getStrafeMot() == 0; // do not jump if standing still
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.creeperMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Drowned.java b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
+index 6c89aa825b51fd1054bb04d4a6a23778e90bd7c6..0217fb932379e5789dce932b6af90f1e97fb95de 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Drowned.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
+@@ -84,6 +84,16 @@ public class Drowned extends Zombie implements RangedAttackMob {
+     public boolean isControllable() {
+         return level.purpurConfig.drownedControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.drownedMaxHealth);
++    }
++
++    @Override
++    protected void randomizeReinforcementsChance() {
++        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level.purpurConfig.drownedSpawnReinforcements);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+index 7e79fe61e4fd0d26f62a0515c437370ccb0abf58..25fab7497a80a8fa65bd9cd9bdb0cd498f240bd1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+@@ -45,6 +45,11 @@ public class ElderGuardian extends Guardian {
+     public boolean isControllable() {
+         return level.purpurConfig.elderGuardianControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.elderGuardianMaxHealth);
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index 1af2aa7d2a3e6a21cd95b6c6f9a32d155c159f05..732fb89ab0405373a782eec9807507f0f3f08238 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -103,6 +103,11 @@ public class EnderMan extends Monster implements NeutralMob {
+     public boolean isControllable() {
+         return level.purpurConfig.endermanControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.endermanMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Endermite.java b/src/main/java/net/minecraft/world/entity/monster/Endermite.java
+index 59ccb6ff28d888874ffb380bda9dbb3ded1d76ed..6d47413b56b9d8b195b6087e39048b6ad5ce477f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Endermite.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Endermite.java
+@@ -51,6 +51,11 @@ public class Endermite extends Monster {
+     public boolean isControllable() {
+         return level.purpurConfig.endermiteControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.endermiteMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Evoker.java b/src/main/java/net/minecraft/world/entity/monster/Evoker.java
+index 4ed00e61227e2a50a0a80834e2d6c7ad6c691284..9619f576f83924de5d25be2402137a10790f6f1e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Evoker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Evoker.java
+@@ -63,6 +63,11 @@ public class Evoker extends SpellcasterIllager {
+     public boolean isControllable() {
+         return level.purpurConfig.evokerControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.evokerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ghast.java b/src/main/java/net/minecraft/world/entity/monster/Ghast.java
+index e58a819baee8a8836eef5de5bc4914893e07c7f6..b5b47050c192f61f14aba01671160f6d51361d10 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ghast.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ghast.java
+@@ -76,6 +76,11 @@ public class Ghast extends FlyingMob implements Enemy {
+             setDeltaMovement(mot.scale(0.9D));
+         }
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.ghastMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Giant.java b/src/main/java/net/minecraft/world/entity/monster/Giant.java
+index 8730d6be52a2edeccceb2ac3e6af12cdb20be5c2..fe4eb55cdfa62c169f2b7ac76d086b41c5b08892 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Giant.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Giant.java
+@@ -35,6 +35,13 @@ public class Giant extends Monster {
+         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+     }
++
++    @Override
++    protected void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.giantMaxHealth);
++        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level.purpurConfig.giantMovementSpeed);
++        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.level.purpurConfig.giantAttackDamage);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Guardian.java b/src/main/java/net/minecraft/world/entity/monster/Guardian.java
+index a11e0a181323f1c409f583a8c647f433ad611d79..07f7cddb1faac701ae05e6a29c3427e7f8557cb1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Guardian.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Guardian.java
+@@ -92,6 +92,11 @@ public class Guardian extends Monster {
+     public boolean isControllable() {
+         return level.purpurConfig.guardianControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.guardianMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Husk.java b/src/main/java/net/minecraft/world/entity/monster/Husk.java
+index 80b0d8145e0901af15a7b5e423e3d605a2803dd1..ff84c706d42bc6859faaa9302ba688f43ddcb537 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Husk.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Husk.java
+@@ -37,6 +37,16 @@ public class Husk extends Zombie {
+     public boolean isControllable() {
+         return level.purpurConfig.huskControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.huskMaxHealth);
++    }
++
++    @Override
++    protected void randomizeReinforcementsChance() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level.purpurConfig.huskSpawnReinforcements);
++    }
+     // Purpur end
+ 
+     public static boolean checkHuskSpawnRules(EntityType<Husk> type, ServerLevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+index 98c85e31a2238cbfa31c12214ade49c4ba181702..171e2fef10ac75dd4585a82057edb4452a6f0d22 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+@@ -74,6 +74,13 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
+     public boolean isControllable() {
+         return level.purpurConfig.illusionerControllable;
+     }
++
++    @Override
++    protected void initAttributes() {
++        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level.purpurConfig.illusionerMovementSpeed);
++        this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(this.level.purpurConfig.illusionerFollowRange);
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.illusionerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/MagmaCube.java b/src/main/java/net/minecraft/world/entity/monster/MagmaCube.java
+index d111d6afb7c0937e48f7d212dec5f2d4a1c0a673..d4ce48a99fad5e9a26f8e057d91c712b8d8623b0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/MagmaCube.java
++++ b/src/main/java/net/minecraft/world/entity/monster/MagmaCube.java
+@@ -47,6 +47,26 @@ public class MagmaCube extends Slime {
+     public float getJumpPower() {
+         return 0.42F * this.getBlockJumpFactor(); // from EntityLiving
+     }
++
++    @Override
++    protected String getMaxHealthEquation() {
++        return level.purpurConfig.magmaCubeMaxHealth;
++    }
++
++    @Override
++    protected String getAttackDamageEquation() {
++        return level.purpurConfig.magmaCubeAttackDamage;
++    }
++
++    @Override
++    protected java.util.Map<Integer, Double> getMaxHealthCache() {
++        return level.purpurConfig.magmaCubeMaxHealthCache;
++    }
++
++    @Override
++    protected java.util.Map<Integer, Double> getAttackDamageCache() {
++        return level.purpurConfig.magmaCubeAttackDamageCache;
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 60aab3964ebd180b52b57fba0705a63445a349bc..c6fc7042386c98debf9b6e4614aca99d391d7e38 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -116,6 +116,21 @@ public class Phantom extends FlyingMob implements Enemy {
+         level.addFreshEntity(flames);
+         return true;
+     }
++
++    private double getFromCache(java.util.function.Supplier<String> equation, java.util.function.Supplier<java.util.Map<Integer, Double>> cache, java.util.function.Supplier<Double> defaultValue) {
++        int size = getPhantomSize();
++        Double value = cache.get().get(size);
++        if (value == null) {
++            try {
++                scriptEngine.eval("size = " + size);
++                value = (double) scriptEngine.eval(equation.get());
++            } catch (Exception e) {
++                value = defaultValue.get();
++            }
++            cache.get().put(size, value);
++        }
++        return value;
++    }
+     // Purpur end
+ 
+     @Override
+@@ -150,7 +165,10 @@ public class Phantom extends FlyingMob implements Enemy {
+ 
+     private void updatePhantomSizeInfo() {
+         this.refreshDimensions();
+-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue((double) (6 + this.getPhantomSize()));
++        // Purpur start
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(getFromCache(() -> this.level.purpurConfig.phantomMaxHealth, () -> this.level.purpurConfig.phantomMaxHealthCache, () -> 20.0D));
++        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(getFromCache(() -> this.level.purpurConfig.phantomAttackDamage, () -> this.level.purpurConfig.phantomAttackDamageCache, () -> (double) 6 + this.getPhantomSize()));
++        // Purpur end
+     }
+ 
+     public int getPhantomSize() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Pillager.java b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+index 9223c5cc4d5a1755020eb91ec7fea4943ffe499e..efb80248d3c7318aaf58861b21d497ce57fcecdc 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Pillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+@@ -78,6 +78,11 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
+     public boolean isControllable() {
+         return level.purpurConfig.pillagerControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.pillagerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index aa33c5c709babb88d017d47e43de7a06954b940a..0b916be0e0ed6fcf4263759da368732f4e16542a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -90,6 +90,11 @@ public class Ravager extends Raider {
+         super.onMount(rider);
+         getNavigation().stop();
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.ravagerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index 9507e4817e62c749726e4cf9914f51da0aeaba71..545ca8ada7ef9cff3619d2a556ddbd01742703f1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -107,6 +107,11 @@ public class Shulker extends AbstractGolem implements Enemy {
+     public boolean isControllable() {
+         return level.purpurConfig.shulkerControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.shulkerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 0073cfb4b68f4a5938336c063c382ad4c14536d9..dd473dcd310e6af808bf3e90dc48bd19faf75fe1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -56,6 +56,11 @@ public class Silverfish extends Monster {
+     public boolean isControllable() {
+         return level.purpurConfig.silverfishControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.silverfishMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+index e73644f453bed8523bfad47764018362a416b5ea..e239bcc4d4afe48e9fc204ad38d8bc76833994f4 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+@@ -40,6 +40,11 @@ public class Skeleton extends AbstractSkeleton {
+     public boolean isControllable() {
+         return level.purpurConfig.skeletonControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.skeletonMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+index 4ded6fed9a5f3fbe8721bebc4f1fdb33d282e6bc..d7779ad6b6ce502468f104e35a715bf8fc013cff 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+@@ -106,6 +106,37 @@ public class Slime extends Mob implements Enemy {
+         }
+         return true; // do not jump() in wasd controller, let vanilla controller handle
+     }
++
++    protected String getMaxHealthEquation() {
++        return level.purpurConfig.slimeMaxHealth;
++    }
++
++    protected String getAttackDamageEquation() {
++        return level.purpurConfig.slimeAttackDamage;
++    }
++
++    protected java.util.Map<Integer, Double> getMaxHealthCache() {
++        return level.purpurConfig.slimeMaxHealthCache;
++    }
++
++    protected java.util.Map<Integer, Double> getAttackDamageCache() {
++        return level.purpurConfig.slimeAttackDamageCache;
++    }
++
++    protected double getFromCache(java.util.function.Supplier<String> equation, java.util.function.Supplier<java.util.Map<Integer, Double>> cache, java.util.function.Supplier<Double> defaultValue) {
++        int size = getSize();
++        Double value = cache.get().get(size);
++        if (value == null) {
++            try {
++                scriptEngine.eval("size = " + size);
++                value = (double) scriptEngine.eval(equation.get());
++            } catch (Exception e) {
++                value = defaultValue.get();
++            }
++            cache.get().put(size, value);
++        }
++        return value;
++    }
+     // Purpur end
+ 
+     @Override
+@@ -134,9 +165,9 @@ public class Slime extends Mob implements Enemy {
+         this.entityData.set(Slime.ID_SIZE, j);
+         this.reapplyPosition();
+         this.refreshDimensions();
+-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue((double) (j * j));
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(getFromCache(this::getMaxHealthEquation, this::getMaxHealthCache, () -> (double) size * size)); // Purpur
+         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue((double) (0.2F + 0.1F * (float) j));
+-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue((double) j);
++        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(getFromCache(this::getAttackDamageEquation, this::getAttackDamageCache, () -> (double) j)); // Purpur
+         if (heal) {
+             this.setHealth(this.getMaxHealth());
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index a1870354e1ea5d4ef4248c04f9fe8a3dc93b9d8b..219aeced44c99e64267cff8df39e4f4e8aa55da7 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -66,6 +66,11 @@ public class Spider extends Monster {
+     public boolean isControllable() {
+         return level.purpurConfig.spiderControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.spiderMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Stray.java b/src/main/java/net/minecraft/world/entity/monster/Stray.java
+index b97862f653fe0aca93335fdd1ef0cf871626a58c..b54368f53d3cf87f35132f811f8a917999968c1e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Stray.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Stray.java
+@@ -36,6 +36,11 @@ public class Stray extends AbstractSkeleton {
+     public boolean isControllable() {
+         return level.purpurConfig.strayControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.strayMaxHealth);
++    }
+     // Purpur end
+ 
+     public static boolean checkStraySpawnRules(EntityType<Stray> type, ServerLevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Strider.java b/src/main/java/net/minecraft/world/entity/monster/Strider.java
+index fc43b53e8a0c7674ec523536e615a4ee62ada61c..0ceeca25fddea15ba5860f2745dc37a29845cb3e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Strider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Strider.java
+@@ -112,6 +112,11 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+     public boolean isControllable() {
+         return level.purpurConfig.striderControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.striderMaxHealth);
++    }
+     // Purpur end
+ 
+     public static boolean checkStriderSpawnRules(EntityType<Strider> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vex.java b/src/main/java/net/minecraft/world/entity/monster/Vex.java
+index 66311fc3cf8f0ed50174bb834067d4365c393fef..b223b48215adcd57ea9656194df3b5673a82586b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vex.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vex.java
+@@ -100,6 +100,11 @@ public class Vex extends Monster {
+     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+         return false; //  no fall damage please
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.vexMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+index ddb0b32821aa6f61370ce8d262ce3d846c7ee9d0..ff62f5ed29a826c4dd53eb6fe04f5aa27de62619 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+@@ -73,6 +73,11 @@ public class Vindicator extends AbstractIllager {
+     public boolean isControllable() {
+         return level.purpurConfig.vindicatorControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.vindicatorMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Witch.java b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+index 8e643b22a2af74acfe2b6710586a40c19ddcc085..33d6aba40c6523cb271946bac98c6e84593a2c6b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Witch.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+@@ -74,6 +74,11 @@ public class Witch extends Raider implements RangedAttackMob {
+     public boolean isControllable() {
+         return level.purpurConfig.witchControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.witchMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
+index 54020eefe310f7cf653e97dfb525713d098e85ed..d7d15eaaed3d184c0a4f81b09f7d2b564742ecd1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
+@@ -49,6 +49,11 @@ public class WitherSkeleton extends AbstractSkeleton {
+     public boolean isControllable() {
+         return level.purpurConfig.witherSkeletonControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.witherSkeletonMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zoglin.java b/src/main/java/net/minecraft/world/entity/monster/Zoglin.java
+index a6aaffc41a39be4ae1da44d54a27d324927e47d0..a91ec2e385940b12bc41d9c09819c9081edc5c44 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zoglin.java
+@@ -83,6 +83,11 @@ public class Zoglin extends Monster implements Enemy, HoglinBase {
+     public boolean isControllable() {
+         return level.purpurConfig.zoglinControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.zoglinMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index cd70d228a690485c7f379d0744262907d19fa080..6943933ef0e97f31fbbcedee4ff469bc6e7e49c0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -119,6 +119,11 @@ public class Zombie extends Monster {
+     public boolean isControllable() {
+         return level.purpurConfig.zombieControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.drownedMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+@@ -596,7 +601,7 @@ public class Zombie extends Monster {
+     }
+ 
+     protected void randomizeReinforcementsChance() {
+-        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * 0.10000000149011612D);
++        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level.purpurConfig.zombieSpawnReinforcements); // Purpur
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+index b74a2dd32481dd2135b4aa4b860cf9e1b743af66..6309a40ce0d349a6e278d6584b056dc644a358ba 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+@@ -90,6 +90,16 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+     public boolean isControllable() {
+         return level.purpurConfig.zombieVillagerControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.zombieVillagerMaxHealth);
++    }
++
++    @Override
++    protected void randomizeReinforcementsChance() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level.purpurConfig.zombieVillagerSpawnReinforcements);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
+index af60b2666529fbf83578672e9a4a03d4783602fe..e743fb4de0647088d06ec53291496e0d2f44fe44 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
+@@ -74,6 +74,11 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+     public boolean isControllable() {
+         return level.purpurConfig.zombifiedPiglinControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.zombifiedPiglinMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+@@ -258,7 +263,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+ 
+     @Override
+     protected void randomizeReinforcementsChance() {
+-        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(0.0D);
++        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level.purpurConfig.zombifiedPiglinSpawnReinforcements); // Purpur
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 1d3227a216b7daea6555f1c859c9a571050ff18b..fc08f6ec195abcb1950d6924905740d59689a543 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -82,6 +82,11 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+     public boolean isControllable() {
+         return level.purpurConfig.hoglinControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.hoglinMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+index 7ac0a9ee569043dcfaa2e19141060c5358e03f9f..76b7e5ed4e50dcbb9e8ac5a142884b764e27c8ed 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -111,6 +111,11 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     public boolean isControllable() {
+         return level.purpurConfig.piglinControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.piglinMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinBrute.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
+index 8ad63ae82a8b6a26c03e53b6d043128a8e038863..ec532ba1ccb0dbe50b91ba698a4f30d5bc89ca82 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
+@@ -55,6 +55,11 @@ public class PiglinBrute extends AbstractPiglin {
+     public boolean isControllable() {
+         return level.purpurConfig.piglinBruteControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.piglinBruteMaxHealth);
++    }
+     // Purpur end
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index dd37faff29a8c8199fd0c6730d9bdc79ad97e254..e413888ee04d6b236d2f7b8323e36d02dfe6b854 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -173,6 +173,11 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.villagerMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+index ac17d5e9fa110c5de297be2a762631ce03e081eb..ab7beb6ddccf9e392aa791fee9280af814695259 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+@@ -82,6 +82,11 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
+     public boolean isControllable() {
+         return level.purpurConfig.wanderingTraderControllable;
+     }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level.purpurConfig.wanderingTraderMaxHealth);
++    }
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+index 969c78aef40aae497a76dd7f3e9c230577a8d31f..c38d9583d8ce50670d78b60d92c90d1d5eb4bbfc 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+@@ -100,94 +100,166 @@ public class PurpurWorldConfig {
+ 
+     public boolean axolotlRidable = false;
+     public boolean axolotlControllable = true;
++    public double axolotlMaxHealth = 14.0D;
+     private void axolotlSettings() {
+         axolotlRidable = getBoolean("mobs.axolotl.ridable", axolotlRidable);
+         axolotlControllable = getBoolean("mobs.axolotl.controllable", axolotlControllable);
++        axolotlMaxHealth = getDouble("mobs.axolotl.attributes.max_health", axolotlMaxHealth);
+     }
+ 
+     public boolean batRidable = false;
+     public boolean batRidableInWater = false;
+     public boolean batControllable = true;
+     public double batMaxY = 320D;
++    public double batMaxHealth = 6.0D;
++    public double batFollowRange = 16.0D;
++    public double batKnockbackResistance = 0.0D;
++    public double batMovementSpeed = 0.6D;
++    public double batFlyingSpeed = 0.6D;
++    public double batArmor = 0.0D;
++    public double batArmorToughness = 0.0D;
++    public double batAttackKnockback = 0.0D;
+     private void batSettings() {
+         batRidable = getBoolean("mobs.bat.ridable", batRidable);
+         batRidableInWater = getBoolean("mobs.bat.ridable-in-water", batRidableInWater);
+         batControllable = getBoolean("mobs.bat.controllable", batControllable);
+         batMaxY = getDouble("mobs.bat.ridable-max-y", batMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.bat.attributes.max-health", batMaxHealth);
++            set("mobs.bat.attributes.max-health", null);
++            set("mobs.bat.attributes.max_health", oldValue);
++        }
++        batMaxHealth = getDouble("mobs.bat.attributes.max_health", batMaxHealth);
+     }
+ 
+     public boolean beeRidable = false;
+     public boolean beeRidableInWater = false;
+     public boolean beeControllable = true;
+     public double beeMaxY = 320D;
++    public double beeMaxHealth = 10.0D;
+     private void beeSettings() {
+         beeRidable = getBoolean("mobs.bee.ridable", beeRidable);
+         beeRidableInWater = getBoolean("mobs.bee.ridable-in-water", beeRidableInWater);
+         beeControllable = getBoolean("mobs.bee.controllable", beeControllable);
+         beeMaxY = getDouble("mobs.bee.ridable-max-y", beeMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.bee.attributes.max-health", beeMaxHealth);
++            set("mobs.bee.attributes.max-health", null);
++            set("mobs.bee.attributes.max_health", oldValue);
++        }
++        beeMaxHealth = getDouble("mobs.bee.attributes.max_health", beeMaxHealth);
+     }
+ 
+     public boolean blazeRidable = false;
+     public boolean blazeRidableInWater = false;
+     public boolean blazeControllable = true;
+     public double blazeMaxY = 320D;
++    public double blazeMaxHealth = 20.0D;
+     private void blazeSettings() {
+         blazeRidable = getBoolean("mobs.blaze.ridable", blazeRidable);
+         blazeRidableInWater = getBoolean("mobs.blaze.ridable-in-water", blazeRidableInWater);
+         blazeControllable = getBoolean("mobs.blaze.controllable", blazeControllable);
+         blazeMaxY = getDouble("mobs.blaze.ridable-max-y", blazeMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.blaze.attributes.max-health", blazeMaxHealth);
++            set("mobs.blaze.attributes.max-health", null);
++            set("mobs.blaze.attributes.max_health", oldValue);
++        }
++        blazeMaxHealth = getDouble("mobs.blaze.attributes.max_health", blazeMaxHealth);
+     }
+ 
+     public boolean catRidable = false;
+     public boolean catRidableInWater = false;
+     public boolean catControllable = true;
++    public double catMaxHealth = 10.0D;
+     private void catSettings() {
+         catRidable = getBoolean("mobs.cat.ridable", catRidable);
+         catRidableInWater = getBoolean("mobs.cat.ridable-in-water", catRidableInWater);
+         catControllable = getBoolean("mobs.cat.controllable", catControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.cat.attributes.max-health", catMaxHealth);
++            set("mobs.cat.attributes.max-health", null);
++            set("mobs.cat.attributes.max_health", oldValue);
++        }
++        catMaxHealth = getDouble("mobs.cat.attributes.max_health", catMaxHealth);
+     }
+ 
+     public boolean caveSpiderRidable = false;
+     public boolean caveSpiderRidableInWater = false;
+     public boolean caveSpiderControllable = true;
++    public double caveSpiderMaxHealth = 12.0D;
+     private void caveSpiderSettings() {
+         caveSpiderRidable = getBoolean("mobs.cave_spider.ridable", caveSpiderRidable);
+         caveSpiderRidableInWater = getBoolean("mobs.cave_spider.ridable-in-water", caveSpiderRidableInWater);
+         caveSpiderControllable = getBoolean("mobs.cave_spider.controllable", caveSpiderControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.cave_spider.attributes.max-health", caveSpiderMaxHealth);
++            set("mobs.cave_spider.attributes.max-health", null);
++            set("mobs.cave_spider.attributes.max_health", oldValue);
++        }
++        caveSpiderMaxHealth = getDouble("mobs.cave_spider.attributes.max_health", caveSpiderMaxHealth);
+     }
+ 
+     public boolean chickenRidable = false;
+     public boolean chickenRidableInWater = false;
+     public boolean chickenControllable = true;
++    public double chickenMaxHealth = 4.0D;
+     private void chickenSettings() {
+         chickenRidable = getBoolean("mobs.chicken.ridable", chickenRidable);
+         chickenRidableInWater = getBoolean("mobs.chicken.ridable-in-water", chickenRidableInWater);
+         chickenControllable = getBoolean("mobs.chicken.controllable", chickenControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.chicken.attributes.max-health", chickenMaxHealth);
++            set("mobs.chicken.attributes.max-health", null);
++            set("mobs.chicken.attributes.max_health", oldValue);
++        }
++        chickenMaxHealth = getDouble("mobs.chicken.attributes.max_health", chickenMaxHealth);
+     }
+ 
+     public boolean codRidable = false;
+     public boolean codControllable = true;
++    public double codMaxHealth = 3.0D;
+     private void codSettings() {
+         codRidable = getBoolean("mobs.cod.ridable", codRidable);
+         codControllable = getBoolean("mobs.cod.controllable", codControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.cod.attributes.max-health", codMaxHealth);
++            set("mobs.cod.attributes.max-health", null);
++            set("mobs.cod.attributes.max_health", oldValue);
++        }
++        codMaxHealth = getDouble("mobs.cod.attributes.max_health", codMaxHealth);
+     }
+ 
+     public boolean cowRidable = false;
+     public boolean cowRidableInWater = false;
+     public boolean cowControllable = true;
++    public double cowMaxHealth = 10.0D;
+     private void cowSettings() {
+         cowRidable = getBoolean("mobs.cow.ridable", cowRidable);
+         cowRidableInWater = getBoolean("mobs.cow.ridable-in-water", cowRidableInWater);
+         cowControllable = getBoolean("mobs.cow.controllable", cowControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.cow.attributes.max-health", cowMaxHealth);
++            set("mobs.cow.attributes.max-health", null);
++            set("mobs.cow.attributes.max_health", oldValue);
++        }
++        cowMaxHealth = getDouble("mobs.cow.attributes.max_health", cowMaxHealth);
+     }
+ 
+     public boolean creeperRidable = false;
+     public boolean creeperRidableInWater = false;
+     public boolean creeperControllable = true;
++    public double creeperMaxHealth = 20.0D;
+     private void creeperSettings() {
+         creeperRidable = getBoolean("mobs.creeper.ridable", creeperRidable);
+         creeperRidableInWater = getBoolean("mobs.creeper.ridable-in-water", creeperRidableInWater);
+         creeperControllable = getBoolean("mobs.creeper.controllable", creeperControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.creeper.attributes.max-health", creeperMaxHealth);
++            set("mobs.creeper.attributes.max-health", null);
++            set("mobs.creeper.attributes.max_health", oldValue);
++        }
++        creeperMaxHealth = getDouble("mobs.creeper.attributes.max_health", creeperMaxHealth);
+     }
+ 
+     public boolean dolphinRidable = false;
+@@ -195,227 +267,477 @@ public class PurpurWorldConfig {
+     public int dolphinSpitCooldown = 20;
+     public float dolphinSpitSpeed = 1.0F;
+     public float dolphinSpitDamage = 2.0F;
++    public double dolphinMaxHealth = 10.0D;
+     private void dolphinSettings() {
+         dolphinRidable = getBoolean("mobs.dolphin.ridable", dolphinRidable);
+         dolphinControllable = getBoolean("mobs.dolphin.controllable", dolphinControllable);
+         dolphinSpitCooldown = getInt("mobs.dolphin.spit.cooldown", dolphinSpitCooldown);
+         dolphinSpitSpeed = (float) getDouble("mobs.dolphin.spit.speed", dolphinSpitSpeed);
+         dolphinSpitDamage = (float) getDouble("mobs.dolphin.spit.damage", dolphinSpitDamage);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.dolphin.attributes.max-health", dolphinMaxHealth);
++            set("mobs.dolphin.attributes.max-health", null);
++            set("mobs.dolphin.attributes.max_health", oldValue);
++        }
++        dolphinMaxHealth = getDouble("mobs.dolphin.attributes.max_health", dolphinMaxHealth);
+     }
+ 
+     public boolean donkeyRidableInWater = false;
++    public double donkeyMaxHealthMin = 15.0D;
++    public double donkeyMaxHealthMax = 30.0D;
++    public double donkeyJumpStrengthMin = 0.5D;
++    public double donkeyJumpStrengthMax = 0.5D;
++    public double donkeyMovementSpeedMin = 0.175D;
++    public double donkeyMovementSpeedMax = 0.175D;
+     private void donkeySettings() {
+         donkeyRidableInWater = getBoolean("mobs.donkey.ridable-in-water", donkeyRidableInWater);
++        if (PurpurConfig.version < 10) {
++            double oldMin = getDouble("mobs.donkey.attributes.max-health.min", donkeyMaxHealthMin);
++            double oldMax = getDouble("mobs.donkey.attributes.max-health.max", donkeyMaxHealthMax);
++            set("mobs.donkey.attributes.max-health", null);
++            set("mobs.donkey.attributes.max_health.min", oldMin);
++            set("mobs.donkey.attributes.max_health.max", oldMax);
++        }
++        donkeyMaxHealthMin = getDouble("mobs.donkey.attributes.max_health.min", donkeyMaxHealthMin);
++        donkeyMaxHealthMax = getDouble("mobs.donkey.attributes.max_health.max", donkeyMaxHealthMax);
++        donkeyJumpStrengthMin = getDouble("mobs.donkey.attributes.jump_strength.min", donkeyJumpStrengthMin);
++        donkeyJumpStrengthMax = getDouble("mobs.donkey.attributes.jump_strength.max", donkeyJumpStrengthMax);
++        donkeyMovementSpeedMin = getDouble("mobs.donkey.attributes.movement_speed.min", donkeyMovementSpeedMin);
++        donkeyMovementSpeedMax = getDouble("mobs.donkey.attributes.movement_speed.max", donkeyMovementSpeedMax);
+     }
+ 
+     public boolean drownedRidable = false;
+     public boolean drownedRidableInWater = false;
+     public boolean drownedControllable = true;
++    public double drownedMaxHealth = 20.0D;
++    public double drownedSpawnReinforcements = 0.1D;
+     private void drownedSettings() {
+         drownedRidable = getBoolean("mobs.drowned.ridable", drownedRidable);
+         drownedRidableInWater = getBoolean("mobs.drowned.ridable-in-water", drownedRidableInWater);
+         drownedControllable = getBoolean("mobs.drowned.controllable", drownedControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.drowned.attributes.max-health", drownedMaxHealth);
++            set("mobs.drowned.attributes.max-health", null);
++            set("mobs.drowned.attributes.max_health", oldValue);
++        }
++        drownedMaxHealth = getDouble("mobs.drowned.attributes.max_health", drownedMaxHealth);
++        drownedSpawnReinforcements = getDouble("mobs.drowned.attributes.spawn_reinforcements", drownedSpawnReinforcements);
+     }
+ 
+     public boolean elderGuardianRidable = false;
+     public boolean elderGuardianControllable = true;
++    public double elderGuardianMaxHealth = 80.0D;
+     private void elderGuardianSettings() {
+         elderGuardianRidable = getBoolean("mobs.elder_guardian.ridable", elderGuardianRidable);
+         elderGuardianControllable = getBoolean("mobs.elder_guardian.controllable", elderGuardianControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.elder_guardian.attributes.max-health", elderGuardianMaxHealth);
++            set("mobs.elder_guardian.attributes.max-health", null);
++            set("mobs.elder_guardian.attributes.max_health", oldValue);
++        }
++        elderGuardianMaxHealth = getDouble("mobs.elder_guardian.attributes.max_health", elderGuardianMaxHealth);
+     }
+ 
+     public boolean enderDragonRidable = false;
+     public boolean enderDragonRidableInWater = false;
+     public boolean enderDragonControllable = true;
+     public double enderDragonMaxY = 320D;
++    public double enderDragonMaxHealth = 200.0D;
+     private void enderDragonSettings() {
+         enderDragonRidable = getBoolean("mobs.ender_dragon.ridable", enderDragonRidable);
+         enderDragonRidableInWater = getBoolean("mobs.ender_dragon.ridable-in-water", enderDragonRidableInWater);
+         enderDragonControllable = getBoolean("mobs.ender_dragon.controllable", enderDragonControllable);
+         enderDragonMaxY = getDouble("mobs.ender_dragon.ridable-max-y", enderDragonMaxY);
++        if (PurpurConfig.version < 8) {
++            double oldValue = getDouble("mobs.ender_dragon.max-health", enderDragonMaxHealth);
++            set("mobs.ender_dragon.max-health", null);
++            set("mobs.ender_dragon.attributes.max_health", oldValue);
++        } else if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.ender_dragon.attributes.max-health", enderDragonMaxHealth);
++            set("mobs.ender_dragon.attributes.max-health", null);
++            set("mobs.ender_dragon.attributes.max_health", oldValue);
++        }
++        enderDragonMaxHealth = getDouble("mobs.ender_dragon.attributes.max_health", enderDragonMaxHealth);
+     }
+ 
+     public boolean endermanRidable = false;
+     public boolean endermanRidableInWater = false;
+     public boolean endermanControllable = true;
++    public double endermanMaxHealth = 40.0D;
+     private void endermanSettings() {
+         endermanRidable = getBoolean("mobs.enderman.ridable", endermanRidable);
+         endermanRidableInWater = getBoolean("mobs.enderman.ridable-in-water", endermanRidableInWater);
+         endermanControllable = getBoolean("mobs.enderman.controllable", endermanControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.enderman.attributes.max-health", endermanMaxHealth);
++            set("mobs.enderman.attributes.max-health", null);
++            set("mobs.enderman.attributes.max_health", oldValue);
++        }
++        endermanMaxHealth = getDouble("mobs.enderman.attributes.max_health", endermanMaxHealth);
+     }
+ 
+     public boolean endermiteRidable = false;
+     public boolean endermiteRidableInWater = false;
+     public boolean endermiteControllable = true;
++    public double endermiteMaxHealth = 8.0D;
+     private void endermiteSettings() {
+         endermiteRidable = getBoolean("mobs.endermite.ridable", endermiteRidable);
+         endermiteRidableInWater = getBoolean("mobs.endermite.ridable-in-water", endermiteRidableInWater);
+         endermiteControllable = getBoolean("mobs.endermite.controllable", endermiteControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.endermite.attributes.max-health", endermiteMaxHealth);
++            set("mobs.endermite.attributes.max-health", null);
++            set("mobs.endermite.attributes.max_health", oldValue);
++        }
++        endermiteMaxHealth = getDouble("mobs.endermite.attributes.max_health", endermiteMaxHealth);
+     }
+ 
+     public boolean evokerRidable = false;
+     public boolean evokerRidableInWater = false;
+     public boolean evokerControllable = true;
++    public double evokerMaxHealth = 24.0D;
+     private void evokerSettings() {
+         evokerRidable = getBoolean("mobs.evoker.ridable", evokerRidable);
+         evokerRidableInWater = getBoolean("mobs.evoker.ridable-in-water", evokerRidableInWater);
+         evokerControllable = getBoolean("mobs.evoker.controllable", evokerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.evoker.attributes.max-health", evokerMaxHealth);
++            set("mobs.evoker.attributes.max-health", null);
++            set("mobs.evoker.attributes.max_health", oldValue);
++        }
++        evokerMaxHealth = getDouble("mobs.evoker.attributes.max_health", evokerMaxHealth);
+     }
+ 
+     public boolean foxRidable = false;
+     public boolean foxRidableInWater = false;
+     public boolean foxControllable = true;
++    public double foxMaxHealth = 10.0D;
+     private void foxSettings() {
+         foxRidable = getBoolean("mobs.fox.ridable", foxRidable);
+         foxRidableInWater = getBoolean("mobs.fox.ridable-in-water", foxRidableInWater);
+         foxControllable = getBoolean("mobs.fox.controllable", foxControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.fox.attributes.max-health", foxMaxHealth);
++            set("mobs.fox.attributes.max-health", null);
++            set("mobs.fox.attributes.max_health", oldValue);
++        }
++        foxMaxHealth = getDouble("mobs.fox.attributes.max_health", foxMaxHealth);
+     }
+ 
+     public boolean ghastRidable = false;
+     public boolean ghastRidableInWater = false;
+     public boolean ghastControllable = true;
+     public double ghastMaxY = 320D;
++    public double ghastMaxHealth = 10.0D;
+     private void ghastSettings() {
+         ghastRidable = getBoolean("mobs.ghast.ridable", ghastRidable);
+         ghastRidableInWater = getBoolean("mobs.ghast.ridable-in-water", ghastRidableInWater);
+         ghastControllable = getBoolean("mobs.ghast.controllable", ghastControllable);
+         ghastMaxY = getDouble("mobs.ghast.ridable-max-y", ghastMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.ghast.attributes.max-health", ghastMaxHealth);
++            set("mobs.ghast.attributes.max-health", null);
++            set("mobs.ghast.attributes.max_health", oldValue);
++        }
++        ghastMaxHealth = getDouble("mobs.ghast.attributes.max_health", ghastMaxHealth);
+     }
+ 
+     public boolean giantRidable = false;
+     public boolean giantRidableInWater = false;
+     public boolean giantControllable = true;
++    public double giantMovementSpeed = 0.5D;
++    public double giantAttackDamage = 50.0D;
++    public double giantMaxHealth = 100.0D;
+     private void giantSettings() {
+         giantRidable = getBoolean("mobs.giant.ridable", giantRidable);
+         giantRidableInWater = getBoolean("mobs.giant.ridable-in-water", giantRidableInWater);
+         giantControllable = getBoolean("mobs.giant.controllable", giantControllable);
++        giantMovementSpeed = getDouble("mobs.giant.movement-speed", giantMovementSpeed);
++        giantAttackDamage = getDouble("mobs.giant.attack-damage", giantAttackDamage);
++        if (PurpurConfig.version < 8) {
++            double oldValue = getDouble("mobs.giant.max-health", giantMaxHealth);
++            set("mobs.giant.max-health", null);
++            set("mobs.giant.attributes.max_health", oldValue);
++        } else if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.giant.attributes.max-health", giantMaxHealth);
++            set("mobs.giant.attributes.max-health", null);
++            set("mobs.giant.attributes.max_health", oldValue);
++        }
++        giantMaxHealth = getDouble("mobs.giant.attributes.max_health", giantMaxHealth);
+     }
+ 
+     public boolean glowSquidRidable = false;
+     public boolean glowSquidControllable = true;
++    public double glowSquidMaxHealth = 10.0D;
+     private void glowSquidSettings() {
+         glowSquidRidable = getBoolean("mobs.glow_squid.ridable", glowSquidRidable);
+         glowSquidControllable = getBoolean("mobs.glow_squid.controllable", glowSquidControllable);
++        glowSquidMaxHealth = getDouble("mobs.glow_squid.attributes.max_health", glowSquidMaxHealth);
+     }
+ 
+     public boolean goatRidable = false;
+     public boolean goatRidableInWater = false;
+     public boolean goatControllable = true;
++    public double goatMaxHealth = 10.0D;
+     private void goatSettings() {
+         goatRidable = getBoolean("mobs.goat.ridable", goatRidable);
+         goatRidableInWater = getBoolean("mobs.goat.ridable-in-water", goatRidableInWater);
+         goatControllable = getBoolean("mobs.goat.controllable", goatControllable);
++        goatMaxHealth = getDouble("mobs.goat.attributes.max_health", goatMaxHealth);
+     }
+ 
+     public boolean guardianRidable = false;
+     public boolean guardianControllable = true;
++    public double guardianMaxHealth = 30.0D;
+     private void guardianSettings() {
+         guardianRidable = getBoolean("mobs.guardian.ridable", guardianRidable);
+         guardianControllable = getBoolean("mobs.guardian.controllable", guardianControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.guardian.attributes.max-health", guardianMaxHealth);
++            set("mobs.guardian.attributes.max-health", null);
++            set("mobs.guardian.attributes.max_health", oldValue);
++        }
++        guardianMaxHealth = getDouble("mobs.guardian.attributes.max_health", guardianMaxHealth);
+     }
+ 
+     public boolean hoglinRidable = false;
+     public boolean hoglinRidableInWater = false;
+     public boolean hoglinControllable = true;
++    public double hoglinMaxHealth = 40.0D;
+     private void hoglinSettings() {
+         hoglinRidable = getBoolean("mobs.hoglin.ridable", hoglinRidable);
+         hoglinRidableInWater = getBoolean("mobs.hoglin.ridable-in-water", hoglinRidableInWater);
+         hoglinControllable = getBoolean("mobs.hoglin.controllable", hoglinControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.hoglin.attributes.max-health", hoglinMaxHealth);
++            set("mobs.hoglin.attributes.max-health", null);
++            set("mobs.hoglin.attributes.max_health", oldValue);
++        }
++        hoglinMaxHealth = getDouble("mobs.hoglin.attributes.max_health", hoglinMaxHealth);
+     }
+ 
+     public boolean horseRidableInWater = false;
++    public double horseMaxHealthMin = 15.0D;
++    public double horseMaxHealthMax = 30.0D;
++    public double horseJumpStrengthMin = 0.4D;
++    public double horseJumpStrengthMax = 1.0D;
++    public double horseMovementSpeedMin = 0.1125D;
++    public double horseMovementSpeedMax = 0.3375D;
+     private void horseSettings() {
+         horseRidableInWater = getBoolean("mobs.horse.ridable-in-water", horseRidableInWater);
++        if (PurpurConfig.version < 10) {
++            double oldMin = getDouble("mobs.horse.attributes.max-health.min", horseMaxHealthMin);
++            double oldMax = getDouble("mobs.horse.attributes.max-health.max", horseMaxHealthMax);
++            set("mobs.horse.attributes.max-health", null);
++            set("mobs.horse.attributes.max_health.min", oldMin);
++            set("mobs.horse.attributes.max_health.max", oldMax);
++        }
++        horseMaxHealthMin = getDouble("mobs.horse.attributes.max_health.min", horseMaxHealthMin);
++        horseMaxHealthMax = getDouble("mobs.horse.attributes.max_health.max", horseMaxHealthMax);
++        horseJumpStrengthMin = getDouble("mobs.horse.attributes.jump_strength.min", horseJumpStrengthMin);
++        horseJumpStrengthMax = getDouble("mobs.horse.attributes.jump_strength.max", horseJumpStrengthMax);
++        horseMovementSpeedMin = getDouble("mobs.horse.attributes.movement_speed.min", horseMovementSpeedMin);
++        horseMovementSpeedMax = getDouble("mobs.horse.attributes.movement_speed.max", horseMovementSpeedMax);
+     }
+ 
+     public boolean huskRidable = false;
+     public boolean huskRidableInWater = false;
+     public boolean huskControllable = true;
++    public double huskMaxHealth = 20.0D;
++    public double huskSpawnReinforcements = 0.1D;
+     private void huskSettings() {
+         huskRidable = getBoolean("mobs.husk.ridable", huskRidable);
+         huskRidableInWater = getBoolean("mobs.husk.ridable-in-water", huskRidableInWater);
+         huskControllable = getBoolean("mobs.husk.controllable", huskControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.husk.attributes.max-health", huskMaxHealth);
++            set("mobs.husk.attributes.max-health", null);
++            set("mobs.husk.attributes.max_health", oldValue);
++        }
++        huskMaxHealth = getDouble("mobs.husk.attributes.max_health", huskMaxHealth);
++        huskSpawnReinforcements = getDouble("mobs.husk.attributes.spawn_reinforcements", huskSpawnReinforcements);
+     }
+ 
+     public boolean illusionerRidable = false;
+     public boolean illusionerRidableInWater = false;
+     public boolean illusionerControllable = true;
++    public double illusionerMovementSpeed = 0.5D;
++    public double illusionerFollowRange = 18.0D;
++    public double illusionerMaxHealth = 32.0D;
+     private void illusionerSettings() {
+         illusionerRidable = getBoolean("mobs.illusioner.ridable", illusionerRidable);
+         illusionerRidableInWater = getBoolean("mobs.illusioner.ridable-in-water", illusionerRidableInWater);
+         illusionerControllable = getBoolean("mobs.illusioner.controllable", illusionerControllable);
++        illusionerMovementSpeed = getDouble("mobs.illusioner.movement-speed", illusionerMovementSpeed);
++        illusionerFollowRange = getDouble("mobs.illusioner.follow-range", illusionerFollowRange);
++        if (PurpurConfig.version < 8) {
++            double oldValue = getDouble("mobs.illusioner.max-health", illusionerMaxHealth);
++            set("mobs.illusioner.max-health", null);
++            set("mobs.illusioner.attributes.max_health", oldValue);
++        } else if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.illusioner.attributes.max-health", illusionerMaxHealth);
++            set("mobs.illusioner.attributes.max-health", null);
++            set("mobs.illusioner.attributes.max_health", oldValue);
++        }
++        illusionerMaxHealth = getDouble("mobs.illusioner.attributes.max_health", illusionerMaxHealth);
+     }
+ 
+     public boolean ironGolemRidable = false;
+     public boolean ironGolemRidableInWater = false;
+     public boolean ironGolemControllable = true;
+     public boolean ironGolemCanSwim = false;
++    public double ironGolemMaxHealth = 100.0D;
+     private void ironGolemSettings() {
+         ironGolemRidable = getBoolean("mobs.iron_golem.ridable", ironGolemRidable);
+         ironGolemRidableInWater = getBoolean("mobs.iron_golem.ridable-in-water", ironGolemRidableInWater);
+         ironGolemControllable = getBoolean("mobs.iron_golem.controllable", ironGolemControllable);
+         ironGolemCanSwim = getBoolean("mobs.iron_golem.can-swim", ironGolemCanSwim);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.iron_golem.attributes.max-health", ironGolemMaxHealth);
++            set("mobs.iron_golem.attributes.max-health", null);
++            set("mobs.iron_golem.attributes.max_health", oldValue);
++        }
++        ironGolemMaxHealth = getDouble("mobs.iron_golem.attributes.max_health", ironGolemMaxHealth);
+     }
+ 
+     public boolean llamaRidable = false;
+     public boolean llamaRidableInWater = false;
+     public boolean llamaControllable = true;
++    public double llamaMaxHealthMin = 15.0D;
++    public double llamaMaxHealthMax = 30.0D;
++    public double llamaJumpStrengthMin = 0.5D;
++    public double llamaJumpStrengthMax = 0.5D;
++    public double llamaMovementSpeedMin = 0.175D;
++    public double llamaMovementSpeedMax = 0.175D;
+     private void llamaSettings() {
+         llamaRidable = getBoolean("mobs.llama.ridable", llamaRidable);
+         llamaRidableInWater = getBoolean("mobs.llama.ridable-in-water", llamaRidableInWater);
+         llamaControllable = getBoolean("mobs.llama.controllable", llamaControllable);
++        if (PurpurConfig.version < 10) {
++            double oldMin = getDouble("mobs.llama.attributes.max-health.min", llamaMaxHealthMin);
++            double oldMax = getDouble("mobs.llama.attributes.max-health.max", llamaMaxHealthMax);
++            set("mobs.llama.attributes.max-health", null);
++            set("mobs.llama.attributes.max_health.min", oldMin);
++            set("mobs.llama.attributes.max_health.max", oldMax);
++        }
++        llamaMaxHealthMin = getDouble("mobs.llama.attributes.max_health.min", llamaMaxHealthMin);
++        llamaMaxHealthMax = getDouble("mobs.llama.attributes.max_health.max", llamaMaxHealthMax);
++        llamaJumpStrengthMin = getDouble("mobs.llama.attributes.jump_strength.min", llamaJumpStrengthMin);
++        llamaJumpStrengthMax = getDouble("mobs.llama.attributes.jump_strength.max", llamaJumpStrengthMax);
++        llamaMovementSpeedMin = getDouble("mobs.llama.attributes.movement_speed.min", llamaMovementSpeedMin);
++        llamaMovementSpeedMax = getDouble("mobs.llama.attributes.movement_speed.max", llamaMovementSpeedMax);
+     }
+ 
+     public boolean magmaCubeRidable = false;
+     public boolean magmaCubeRidableInWater = false;
+     public boolean magmaCubeControllable = true;
++    public String magmaCubeMaxHealth = "size * size";
++    public String magmaCubeAttackDamage = "size";
++    public Map<Integer, Double> magmaCubeMaxHealthCache = new HashMap<>();
++    public Map<Integer, Double> magmaCubeAttackDamageCache = new HashMap<>();
+     private void magmaCubeSettings() {
+         magmaCubeRidable = getBoolean("mobs.magma_cube.ridable", magmaCubeRidable);
+         magmaCubeRidableInWater = getBoolean("mobs.magma_cube.ridable-in-water", magmaCubeRidableInWater);
+         magmaCubeControllable = getBoolean("mobs.magma_cube.controllable", magmaCubeControllable);
++        if (PurpurConfig.version < 10) {
++            String oldValue = getString("mobs.magma_cube.attributes.max-health", magmaCubeMaxHealth);
++            set("mobs.magma_cube.attributes.max-health", null);
++            set("mobs.magma_cube.attributes.max_health", oldValue);
++        }
++        magmaCubeMaxHealth = getString("mobs.magma_cube.attributes.max_health", magmaCubeMaxHealth);
++        magmaCubeAttackDamage = getString("mobs.magma_cube.attributes.attack_damage", magmaCubeAttackDamage);
++        magmaCubeMaxHealthCache.clear();
++        magmaCubeAttackDamageCache.clear();
+     }
+ 
+     public boolean mooshroomRidable = false;
+     public boolean mooshroomRidableInWater = false;
+     public boolean mooshroomControllable = true;
++    public double mooshroomMaxHealth = 10.0D;
+     private void mooshroomSettings() {
+         mooshroomRidable = getBoolean("mobs.mooshroom.ridable", mooshroomRidable);
+         mooshroomRidableInWater = getBoolean("mobs.mooshroom.ridable-in-water", mooshroomRidableInWater);
+         mooshroomControllable = getBoolean("mobs.mooshroom.controllable", mooshroomControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.mooshroom.attributes.max-health", mooshroomMaxHealth);
++            set("mobs.mooshroom.attributes.max-health", null);
++            set("mobs.mooshroom.attributes.max_health", oldValue);
++        }
++        mooshroomMaxHealth = getDouble("mobs.mooshroom.attributes.max_health", mooshroomMaxHealth);
+     }
+ 
+     public boolean muleRidableInWater = false;
++    public double muleMaxHealthMin = 15.0D;
++    public double muleMaxHealthMax = 30.0D;
++    public double muleJumpStrengthMin = 0.5D;
++    public double muleJumpStrengthMax = 0.5D;
++    public double muleMovementSpeedMin = 0.175D;
++    public double muleMovementSpeedMax = 0.175D;
+     private void muleSettings() {
+         muleRidableInWater = getBoolean("mobs.mule.ridable-in-water", muleRidableInWater);
++        if (PurpurConfig.version < 10) {
++            double oldMin = getDouble("mobs.mule.attributes.max-health.min", muleMaxHealthMin);
++            double oldMax = getDouble("mobs.mule.attributes.max-health.max", muleMaxHealthMax);
++            set("mobs.mule.attributes.max-health", null);
++            set("mobs.mule.attributes.max_health.min", oldMin);
++            set("mobs.mule.attributes.max_health.max", oldMax);
++        }
++        muleMaxHealthMin = getDouble("mobs.mule.attributes.max_health.min", muleMaxHealthMin);
++        muleMaxHealthMax = getDouble("mobs.mule.attributes.max_health.max", muleMaxHealthMax);
++        muleJumpStrengthMin = getDouble("mobs.mule.attributes.jump_strength.min", muleJumpStrengthMin);
++        muleJumpStrengthMax = getDouble("mobs.mule.attributes.jump_strength.max", muleJumpStrengthMax);
++        muleMovementSpeedMin = getDouble("mobs.mule.attributes.movement_speed.min", muleMovementSpeedMin);
++        muleMovementSpeedMax = getDouble("mobs.mule.attributes.movement_speed.max", muleMovementSpeedMax);
+     }
+ 
+     public boolean ocelotRidable = false;
+     public boolean ocelotRidableInWater = false;
+     public boolean ocelotControllable = true;
++    public double ocelotMaxHealth = 10.0D;
+     private void ocelotSettings() {
+         ocelotRidable = getBoolean("mobs.ocelot.ridable", ocelotRidable);
+         ocelotRidableInWater = getBoolean("mobs.ocelot.ridable-in-water", ocelotRidableInWater);
+         ocelotControllable = getBoolean("mobs.ocelot.controllable", ocelotControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.ocelot.attributes.max-health", ocelotMaxHealth);
++            set("mobs.ocelot.attributes.max-health", null);
++            set("mobs.ocelot.attributes.max_health", oldValue);
++        }
++        ocelotMaxHealth = getDouble("mobs.ocelot.attributes.max_health", ocelotMaxHealth);
+     }
+ 
+     public boolean pandaRidable = false;
+     public boolean pandaRidableInWater = false;
+     public boolean pandaControllable = true;
++    public double pandaMaxHealth = 20.0D;
+     private void pandaSettings() {
+         pandaRidable = getBoolean("mobs.panda.ridable", pandaRidable);
+         pandaRidableInWater = getBoolean("mobs.panda.ridable-in-water", pandaRidableInWater);
+         pandaControllable = getBoolean("mobs.panda.controllable", pandaControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.panda.attributes.max-health", pandaMaxHealth);
++            set("mobs.panda.attributes.max-health", null);
++            set("mobs.panda.attributes.max_health", oldValue);
++        }
++        pandaMaxHealth = getDouble("mobs.panda.attributes.max_health", pandaMaxHealth);
+     }
+ 
+     public boolean parrotRidable = false;
+     public boolean parrotRidableInWater = false;
+     public boolean parrotControllable = true;
+     public double parrotMaxY = 320D;
++    public double parrotMaxHealth = 6.0D;
+     private void parrotSettings() {
+         parrotRidable = getBoolean("mobs.parrot.ridable", parrotRidable);
+         parrotRidableInWater = getBoolean("mobs.parrot.ridable-in-water", parrotRidableInWater);
+         parrotControllable = getBoolean("mobs.parrot.controllable", parrotControllable);
+         parrotMaxY = getDouble("mobs.parrot.ridable-max-y", parrotMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.parrot.attributes.max-health", parrotMaxHealth);
++            set("mobs.parrot.attributes.max-health", null);
++            set("mobs.parrot.attributes.max_health", oldValue);
++        }
++        parrotMaxHealth = getDouble("mobs.parrot.attributes.max_health", parrotMaxHealth);
+     }
+ 
+     public boolean phantomRidable = false;
+@@ -425,6 +747,10 @@ public class PurpurWorldConfig {
+     public float phantomFlameDamage = 1.0F;
+     public int phantomFlameFireTime = 8;
+     public boolean phantomAllowGriefing = false;
++    public String phantomMaxHealth = "20.0";
++    public String phantomAttackDamage = "6 + size";
++    public Map<Integer, Double> phantomMaxHealthCache = new HashMap<>();
++    public Map<Integer, Double> phantomAttackDamageCache = new HashMap<>();
+     private void phantomSettings() {
+         phantomRidable = getBoolean("mobs.phantom.ridable", phantomRidable);
+         phantomRidableInWater = getBoolean("mobs.phantom.ridable-in-water", phantomRidableInWater);
+@@ -433,323 +759,638 @@ public class PurpurWorldConfig {
+         phantomFlameDamage = (float) getDouble("mobs.phantom.flames.damage", phantomFlameDamage);
+         phantomFlameFireTime = getInt("mobs.phantom.flames.fire-time", phantomFlameFireTime);
+         phantomAllowGriefing = getBoolean("mobs.phantom.allow-griefing", phantomAllowGriefing);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.phantom.attributes.max-health", Double.parseDouble(phantomMaxHealth));
++            set("mobs.phantom.attributes.max-health", null);
++            set("mobs.phantom.attributes.max_health", String.valueOf(oldValue));
++        }
++        if (PurpurConfig.version < 25) {
++            double oldValue = getDouble("mobs.phantom.attributes.max_health", Double.parseDouble(phantomMaxHealth));
++            set("mobs.phantom.attributes.max_health", String.valueOf(oldValue));
++        }
++        phantomMaxHealth = getString("mobs.phantom.attributes.max_health", phantomMaxHealth);
++        phantomAttackDamage = getString("mobs.phantom.attributes.attack_damage", phantomAttackDamage);
++        phantomMaxHealthCache.clear();
++        phantomAttackDamageCache.clear();
+     }
+ 
+     public boolean pigRidable = false;
+     public boolean pigRidableInWater = false;
+     public boolean pigControllable = true;
++    public double pigMaxHealth = 10.0D;
+     private void pigSettings() {
+         pigRidable = getBoolean("mobs.pig.ridable", pigRidable);
+         pigRidableInWater = getBoolean("mobs.pig.ridable-in-water", pigRidableInWater);
+         pigControllable = getBoolean("mobs.pig.controllable", pigControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.pig.attributes.max-health", pigMaxHealth);
++            set("mobs.pig.attributes.max-health", null);
++            set("mobs.pig.attributes.max_health", oldValue);
++        }
++        pigMaxHealth = getDouble("mobs.pig.attributes.max_health", pigMaxHealth);
+     }
+ 
+     public boolean piglinRidable = false;
+     public boolean piglinRidableInWater = false;
+     public boolean piglinControllable = true;
++    public double piglinMaxHealth = 16.0D;
+     private void piglinSettings() {
+         piglinRidable = getBoolean("mobs.piglin.ridable", piglinRidable);
+         piglinRidableInWater = getBoolean("mobs.piglin.ridable-in-water", piglinRidableInWater);
+         piglinControllable = getBoolean("mobs.piglin.controllable", piglinControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.piglin.attributes.max-health", piglinMaxHealth);
++            set("mobs.piglin.attributes.max-health", null);
++            set("mobs.piglin.attributes.max_health", oldValue);
++        }
++        piglinMaxHealth = getDouble("mobs.piglin.attributes.max_health", piglinMaxHealth);
+     }
+ 
+     public boolean piglinBruteRidable = false;
+     public boolean piglinBruteRidableInWater = false;
+     public boolean piglinBruteControllable = true;
++    public double piglinBruteMaxHealth = 50.0D;
+     private void piglinBruteSettings() {
+         piglinBruteRidable = getBoolean("mobs.piglin_brute.ridable", piglinBruteRidable);
+         piglinBruteRidableInWater = getBoolean("mobs.piglin_brute.ridable-in-water", piglinBruteRidableInWater);
+         piglinBruteControllable = getBoolean("mobs.piglin_brute.controllable", piglinBruteControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.piglin_brute.attributes.max-health", piglinBruteMaxHealth);
++            set("mobs.piglin_brute.attributes.max-health", null);
++            set("mobs.piglin_brute.attributes.max_health", oldValue);
++        }
++        piglinBruteMaxHealth = getDouble("mobs.piglin_brute.attributes.max_health", piglinBruteMaxHealth);
+     }
+ 
+     public boolean pillagerRidable = false;
+     public boolean pillagerRidableInWater = false;
+     public boolean pillagerControllable = true;
++    public double pillagerMaxHealth = 24.0D;
+     private void pillagerSettings() {
+         pillagerRidable = getBoolean("mobs.pillager.ridable", pillagerRidable);
+         pillagerRidableInWater = getBoolean("mobs.pillager.ridable-in-water", pillagerRidableInWater);
+         pillagerControllable = getBoolean("mobs.pillager.controllable", pillagerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.pillager.attributes.max-health", pillagerMaxHealth);
++            set("mobs.pillager.attributes.max-health", null);
++            set("mobs.pillager.attributes.max_health", oldValue);
++        }
++        pillagerMaxHealth = getDouble("mobs.pillager.attributes.max_health", pillagerMaxHealth);
+     }
+ 
+     public boolean polarBearRidable = false;
+     public boolean polarBearRidableInWater = false;
+     public boolean polarBearControllable = true;
++    public double polarBearMaxHealth = 30.0D;
+     private void polarBearSettings() {
+         polarBearRidable = getBoolean("mobs.polar_bear.ridable", polarBearRidable);
+         polarBearRidableInWater = getBoolean("mobs.polar_bear.ridable-in-water", polarBearRidableInWater);
+         polarBearControllable = getBoolean("mobs.polar_bear.controllable", polarBearControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.polar_bear.attributes.max-health", polarBearMaxHealth);
++            set("mobs.polar_bear.attributes.max-health", null);
++            set("mobs.polar_bear.attributes.max_health", oldValue);
++        }
++        polarBearMaxHealth = getDouble("mobs.polar_bear.attributes.max_health", polarBearMaxHealth);
+     }
+ 
+     public boolean pufferfishRidable = false;
+     public boolean pufferfishControllable = true;
++    public double pufferfishMaxHealth = 3.0D;
+     private void pufferfishSettings() {
+         pufferfishRidable = getBoolean("mobs.pufferfish.ridable", pufferfishRidable);
+         pufferfishControllable = getBoolean("mobs.pufferfish.controllable", pufferfishControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.pufferfish.attributes.max-health", pufferfishMaxHealth);
++            set("mobs.pufferfish.attributes.max-health", null);
++            set("mobs.pufferfish.attributes.max_health", oldValue);
++        }
++        pufferfishMaxHealth = getDouble("mobs.pufferfish.attributes.max_health", pufferfishMaxHealth);
+     }
+ 
+     public boolean rabbitRidable = false;
+     public boolean rabbitRidableInWater = false;
+     public boolean rabbitControllable = true;
++    public double rabbitMaxHealth = 3.0D;
+     private void rabbitSettings() {
+         rabbitRidable = getBoolean("mobs.rabbit.ridable", rabbitRidable);
+         rabbitRidableInWater = getBoolean("mobs.rabbit.ridable-in-water", rabbitRidableInWater);
+         rabbitControllable = getBoolean("mobs.rabbit.controllable", rabbitControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.rabbit.attributes.max-health", rabbitMaxHealth);
++            set("mobs.rabbit.attributes.max-health", null);
++            set("mobs.rabbit.attributes.max_health", oldValue);
++        }
++        rabbitMaxHealth = getDouble("mobs.rabbit.attributes.max_health", rabbitMaxHealth);
+     }
+ 
+     public boolean ravagerRidable = false;
+     public boolean ravagerRidableInWater = false;
+     public boolean ravagerControllable = true;
++    public double ravagerMaxHealth = 100.0D;
+     private void ravagerSettings() {
+         ravagerRidable = getBoolean("mobs.ravager.ridable", ravagerRidable);
+         ravagerRidableInWater = getBoolean("mobs.ravager.ridable-in-water", ravagerRidableInWater);
+         ravagerControllable = getBoolean("mobs.ravager.controllable", ravagerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.ravager.attributes.max-health", ravagerMaxHealth);
++            set("mobs.ravager.attributes.max-health", null);
++            set("mobs.ravager.attributes.max_health", oldValue);
++        }
++        ravagerMaxHealth = getDouble("mobs.ravager.attributes.max_health", ravagerMaxHealth);
+     }
+ 
+     public boolean salmonRidable = false;
+     public boolean salmonControllable = true;
++    public double salmonMaxHealth = 3.0D;
+     private void salmonSettings() {
+         salmonRidable = getBoolean("mobs.salmon.ridable", salmonRidable);
+         salmonControllable = getBoolean("mobs.salmon.controllable", salmonControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.salmon.attributes.max-health", salmonMaxHealth);
++            set("mobs.salmon.attributes.max-health", null);
++            set("mobs.salmon.attributes.max_health", oldValue);
++        }
++        salmonMaxHealth = getDouble("mobs.salmon.attributes.max_health", salmonMaxHealth);
+     }
+ 
+     public boolean sheepRidable = false;
+     public boolean sheepRidableInWater = false;
+     public boolean sheepControllable = true;
++    public double sheepMaxHealth = 8.0D;
+     private void sheepSettings() {
+         sheepRidable = getBoolean("mobs.sheep.ridable", sheepRidable);
+         sheepRidableInWater = getBoolean("mobs.sheep.ridable-in-water", sheepRidableInWater);
+         sheepControllable = getBoolean("mobs.sheep.controllable", sheepControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.sheep.attributes.max-health", sheepMaxHealth);
++            set("mobs.sheep.attributes.max-health", null);
++            set("mobs.sheep.attributes.max_health", oldValue);
++        }
++        sheepMaxHealth = getDouble("mobs.sheep.attributes.max_health", sheepMaxHealth);
+     }
+ 
+     public boolean shulkerRidable = false;
+     public boolean shulkerRidableInWater = false;
+     public boolean shulkerControllable = true;
++    public double shulkerMaxHealth = 30.0D;
+     private void shulkerSettings() {
+         shulkerRidable = getBoolean("mobs.shulker.ridable", shulkerRidable);
+         shulkerRidableInWater = getBoolean("mobs.shulker.ridable-in-water", shulkerRidableInWater);
+         shulkerControllable = getBoolean("mobs.shulker.controllable", shulkerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.shulker.attributes.max-health", shulkerMaxHealth);
++            set("mobs.shulker.attributes.max-health", null);
++            set("mobs.shulker.attributes.max_health", oldValue);
++        }
++        shulkerMaxHealth = getDouble("mobs.shulker.attributes.max_health", shulkerMaxHealth);
+     }
+ 
+     public boolean silverfishRidable = false;
+     public boolean silverfishRidableInWater = false;
+     public boolean silverfishControllable = true;
++    public double silverfishMaxHealth = 8.0D;
+     private void silverfishSettings() {
+         silverfishRidable = getBoolean("mobs.silverfish.ridable", silverfishRidable);
+         silverfishRidableInWater = getBoolean("mobs.silverfish.ridable-in-water", silverfishRidableInWater);
+         silverfishControllable = getBoolean("mobs.silverfish.controllable", silverfishControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.silverfish.attributes.max-health", silverfishMaxHealth);
++            set("mobs.silverfish.attributes.max-health", null);
++            set("mobs.silverfish.attributes.max_health", oldValue);
++        }
++        silverfishMaxHealth = getDouble("mobs.silverfish.attributes.max_health", silverfishMaxHealth);
+     }
+ 
+     public boolean skeletonRidable = false;
+     public boolean skeletonRidableInWater = false;
+     public boolean skeletonControllable = true;
++    public double skeletonMaxHealth = 20.0D;
+     private void skeletonSettings() {
+         skeletonRidable = getBoolean("mobs.skeleton.ridable", skeletonRidable);
+         skeletonRidableInWater = getBoolean("mobs.skeleton.ridable-in-water", skeletonRidableInWater);
+         skeletonControllable = getBoolean("mobs.skeleton.controllable", skeletonControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.skeleton.attributes.max-health", skeletonMaxHealth);
++            set("mobs.skeleton.attributes.max-health", null);
++            set("mobs.skeleton.attributes.max_health", oldValue);
++        }
++        skeletonMaxHealth = getDouble("mobs.skeleton.attributes.max_health", skeletonMaxHealth);
+     }
+ 
+     public boolean skeletonHorseRidableInWater = true;
+     public boolean skeletonHorseCanSwim = false;
++    public double skeletonHorseMaxHealthMin = 15.0D;
++    public double skeletonHorseMaxHealthMax = 15.0D;
++    public double skeletonHorseJumpStrengthMin = 0.4D;
++    public double skeletonHorseJumpStrengthMax = 1.0D;
++    public double skeletonHorseMovementSpeedMin = 0.2D;
++    public double skeletonHorseMovementSpeedMax = 0.2D;
+     private void skeletonHorseSettings() {
+         skeletonHorseRidableInWater = getBoolean("mobs.skeleton_horse.ridable-in-water", skeletonHorseRidableInWater);
+         skeletonHorseCanSwim = getBoolean("mobs.skeleton_horse.can-swim", skeletonHorseCanSwim);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.skeleton_horse.attributes.max-health", skeletonHorseMaxHealthMin);
++            set("mobs.skeleton_horse.attributes.max-health", null);
++            set("mobs.skeleton_horse.attributes.max_health.min", oldValue);
++            set("mobs.skeleton_horse.attributes.max_health.max", oldValue);
++        }
++        skeletonHorseMaxHealthMin = getDouble("mobs.skeleton_horse.attributes.max_health.min", skeletonHorseMaxHealthMin);
++        skeletonHorseMaxHealthMax = getDouble("mobs.skeleton_horse.attributes.max_health.max", skeletonHorseMaxHealthMax);
++        skeletonHorseJumpStrengthMin = getDouble("mobs.skeleton_horse.attributes.jump_strength.min", skeletonHorseJumpStrengthMin);
++        skeletonHorseJumpStrengthMax = getDouble("mobs.skeleton_horse.attributes.jump_strength.max", skeletonHorseJumpStrengthMax);
++        skeletonHorseMovementSpeedMin = getDouble("mobs.skeleton_horse.attributes.movement_speed.min", skeletonHorseMovementSpeedMin);
++        skeletonHorseMovementSpeedMax = getDouble("mobs.skeleton_horse.attributes.movement_speed.max", skeletonHorseMovementSpeedMax);
+     }
+ 
+     public boolean slimeRidable = false;
+     public boolean slimeRidableInWater = false;
+     public boolean slimeControllable = true;
++    public String slimeMaxHealth = "size * size";
++    public String slimeAttackDamage = "size";
++    public Map<Integer, Double> slimeMaxHealthCache = new HashMap<>();
++    public Map<Integer, Double> slimeAttackDamageCache = new HashMap<>();
+     private void slimeSettings() {
+         slimeRidable = getBoolean("mobs.slime.ridable", slimeRidable);
+         slimeRidableInWater = getBoolean("mobs.slime.ridable-in-water", slimeRidableInWater);
+         slimeControllable = getBoolean("mobs.slime.controllable", slimeControllable);
++        if (PurpurConfig.version < 10) {
++            String oldValue = getString("mobs.slime.attributes.max-health", slimeMaxHealth);
++            set("mobs.slime.attributes.max-health", null);
++            set("mobs.slime.attributes.max_health", oldValue);
++        }
++        slimeMaxHealth = getString("mobs.slime.attributes.max_health", slimeMaxHealth);
++        slimeAttackDamage = getString("mobs.slime.attributes.attack_damage", slimeAttackDamage);
++        slimeMaxHealthCache.clear();
++        slimeAttackDamageCache.clear();
+     }
+ 
+     public boolean snowGolemRidable = false;
+     public boolean snowGolemRidableInWater = false;
+     public boolean snowGolemControllable = true;
+     public boolean snowGolemLeaveTrailWhenRidden = false;
++    public double snowGolemMaxHealth = 4.0D;
+     private void snowGolemSettings() {
+         snowGolemRidable = getBoolean("mobs.snow_golem.ridable", snowGolemRidable);
+         snowGolemRidableInWater = getBoolean("mobs.snow_golem.ridable-in-water", snowGolemRidableInWater);
+         snowGolemControllable = getBoolean("mobs.snow_golem.controllable", snowGolemControllable);
+         snowGolemLeaveTrailWhenRidden = getBoolean("mobs.snow_golem.leave-trail-when-ridden", snowGolemLeaveTrailWhenRidden);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.snow_golem.attributes.max-health", snowGolemMaxHealth);
++            set("mobs.snow_golem.attributes.max-health", null);
++            set("mobs.snow_golem.attributes.max_health", oldValue);
++        }
++        snowGolemMaxHealth = getDouble("mobs.snow_golem.attributes.max_health", snowGolemMaxHealth);
+     }
+ 
+     public boolean squidRidable = false;
+     public boolean squidControllable = true;
++    public double squidMaxHealth = 10.0D;
+     private void squidSettings() {
+         squidRidable = getBoolean("mobs.squid.ridable", squidRidable);
+         squidControllable = getBoolean("mobs.squid.controllable", squidControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.squid.attributes.max-health", squidMaxHealth);
++            set("mobs.squid.attributes.max-health", null);
++            set("mobs.squid.attributes.max_health", oldValue);
++        }
++        squidMaxHealth = getDouble("mobs.squid.attributes.max_health", squidMaxHealth);
+     }
+ 
+     public boolean spiderRidable = false;
+     public boolean spiderRidableInWater = false;
+     public boolean spiderControllable = true;
++    public double spiderMaxHealth = 16.0D;
+     private void spiderSettings() {
+         spiderRidable = getBoolean("mobs.spider.ridable", spiderRidable);
+         spiderRidableInWater = getBoolean("mobs.spider.ridable-in-water", spiderRidableInWater);
+         spiderControllable = getBoolean("mobs.spider.controllable", spiderControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.spider.attributes.max-health", spiderMaxHealth);
++            set("mobs.spider.attributes.max-health", null);
++            set("mobs.spider.attributes.max_health", oldValue);
++        }
++        spiderMaxHealth = getDouble("mobs.spider.attributes.max_health", spiderMaxHealth);
+     }
+ 
+     public boolean strayRidable = false;
+     public boolean strayRidableInWater = false;
+     public boolean strayControllable = true;
++    public double strayMaxHealth = 20.0D;
+     private void straySettings() {
+         strayRidable = getBoolean("mobs.stray.ridable", strayRidable);
+         strayRidableInWater = getBoolean("mobs.stray.ridable-in-water", strayRidableInWater);
+         strayControllable = getBoolean("mobs.stray.controllable", strayControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.stray.attributes.max-health", strayMaxHealth);
++            set("mobs.stray.attributes.max-health", null);
++            set("mobs.stray.attributes.max_health", oldValue);
++        }
++        strayMaxHealth = getDouble("mobs.stray.attributes.max_health", strayMaxHealth);
+     }
+ 
+     public boolean striderRidable = false;
+     public boolean striderRidableInWater = false;
+     public boolean striderControllable = true;
++    public double striderMaxHealth = 20.0D;
+     private void striderSettings() {
+         striderRidable = getBoolean("mobs.strider.ridable", striderRidable);
+         striderRidableInWater = getBoolean("mobs.strider.ridable-in-water", striderRidableInWater);
+         striderControllable = getBoolean("mobs.strider.controllable", striderControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.strider.attributes.max-health", striderMaxHealth);
++            set("mobs.strider.attributes.max-health", null);
++            set("mobs.strider.attributes.max_health", oldValue);
++        }
++        striderMaxHealth = getDouble("mobs.strider.attributes.max_health", striderMaxHealth);
+     }
+ 
+     public boolean traderLlamaRidable = false;
+     public boolean traderLlamaRidableInWater = false;
+     public boolean traderLlamaControllable = true;
++    public double traderLlamaMaxHealthMin = 15.0D;
++    public double traderLlamaMaxHealthMax = 30.0D;
++    public double traderLlamaJumpStrengthMin = 0.5D;
++    public double traderLlamaJumpStrengthMax = 0.5D;
++    public double traderLlamaMovementSpeedMin = 0.175D;
++    public double traderLlamaMovementSpeedMax = 0.175D;
+     private void traderLlamaSettings() {
+         traderLlamaRidable = getBoolean("mobs.trader_llama.ridable", traderLlamaRidable);
+         traderLlamaRidableInWater = getBoolean("mobs.trader_llama.ridable-in-water", traderLlamaRidableInWater);
+         traderLlamaControllable = getBoolean("mobs.trader_llama.controllable", traderLlamaControllable);
++        if (PurpurConfig.version < 10) {
++            double oldMin = getDouble("mobs.trader_llama.attributes.max-health.min", traderLlamaMaxHealthMin);
++            double oldMax = getDouble("mobs.trader_llama.attributes.max-health.max", traderLlamaMaxHealthMax);
++            set("mobs.trader_llama.attributes.max-health", null);
++            set("mobs.trader_llama.attributes.max_health.min", oldMin);
++            set("mobs.trader_llama.attributes.max_health.max", oldMax);
++        }
++        traderLlamaMaxHealthMin = getDouble("mobs.trader_llama.attributes.max_health.min", traderLlamaMaxHealthMin);
++        traderLlamaMaxHealthMax = getDouble("mobs.trader_llama.attributes.max_health.max", traderLlamaMaxHealthMax);
++        traderLlamaJumpStrengthMin = getDouble("mobs.trader_llama.attributes.jump_strength.min", traderLlamaJumpStrengthMin);
++        traderLlamaJumpStrengthMax = getDouble("mobs.trader_llama.attributes.jump_strength.max", traderLlamaJumpStrengthMax);
++        traderLlamaMovementSpeedMin = getDouble("mobs.trader_llama.attributes.movement_speed.min", traderLlamaMovementSpeedMin);
++        traderLlamaMovementSpeedMax = getDouble("mobs.trader_llama.attributes.movement_speed.max", traderLlamaMovementSpeedMax);
+     }
+ 
+     public boolean tropicalFishRidable = false;
+     public boolean tropicalFishControllable = true;
++    public double tropicalFishMaxHealth = 3.0D;
+     private void tropicalFishSettings() {
+         tropicalFishRidable = getBoolean("mobs.tropical_fish.ridable", tropicalFishRidable);
+         tropicalFishControllable = getBoolean("mobs.tropical_fish.controllable", tropicalFishControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.tropical_fish.attributes.max-health", tropicalFishMaxHealth);
++            set("mobs.tropical_fish.attributes.max-health", null);
++            set("mobs.tropical_fish.attributes.max_health", oldValue);
++        }
++        tropicalFishMaxHealth = getDouble("mobs.tropical_fish.attributes.max_health", tropicalFishMaxHealth);
+     }
+ 
+     public boolean turtleRidable = false;
+     public boolean turtleRidableInWater = false;
+     public boolean turtleControllable = true;
++    public double turtleMaxHealth = 30.0D;
+     private void turtleSettings() {
+         turtleRidable = getBoolean("mobs.turtle.ridable", turtleRidable);
+         turtleRidableInWater = getBoolean("mobs.turtle.ridable-in-water", turtleRidableInWater);
+         turtleControllable = getBoolean("mobs.turtle.controllable", turtleControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.turtle.attributes.max-health", turtleMaxHealth);
++            set("mobs.turtle.attributes.max-health", null);
++            set("mobs.turtle.attributes.max_health", oldValue);
++        }
++        turtleMaxHealth = getDouble("mobs.turtle.attributes.max_health", turtleMaxHealth);
+     }
+ 
+     public boolean vexRidable = false;
+     public boolean vexRidableInWater = false;
+     public boolean vexControllable = true;
+     public double vexMaxY = 320D;
++    public double vexMaxHealth = 14.0D;
+     private void vexSettings() {
+         vexRidable = getBoolean("mobs.vex.ridable", vexRidable);
+         vexRidableInWater = getBoolean("mobs.vex.ridable-in-water", vexRidableInWater);
+         vexControllable = getBoolean("mobs.vex.controllable", vexControllable);
+         vexMaxY = getDouble("mobs.vex.ridable-max-y", vexMaxY);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.vex.attributes.max-health", vexMaxHealth);
++            set("mobs.vex.attributes.max-health", null);
++            set("mobs.vex.attributes.max_health", oldValue);
++        }
++        vexMaxHealth = getDouble("mobs.vex.attributes.max_health", vexMaxHealth);
+     }
+ 
+     public boolean villagerRidable = false;
+     public boolean villagerRidableInWater = false;
+     public boolean villagerControllable = true;
++    public double villagerMaxHealth = 20.0D;
+     private void villagerSettings() {
+         villagerRidable = getBoolean("mobs.villager.ridable", villagerRidable);
+         villagerRidableInWater = getBoolean("mobs.villager.ridable-in-water", villagerRidableInWater);
+         villagerControllable = getBoolean("mobs.villager.controllable", villagerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.villager.attributes.max-health", villagerMaxHealth);
++            set("mobs.villager.attributes.max-health", null);
++            set("mobs.villager.attributes.max_health", oldValue);
++        }
++        villagerMaxHealth = getDouble("mobs.villager.attributes.max_health", villagerMaxHealth);
+     }
+ 
+     public boolean vindicatorRidable = false;
+     public boolean vindicatorRidableInWater = false;
+     public boolean vindicatorControllable = true;
++    public double vindicatorMaxHealth = 24.0D;
+     private void vindicatorSettings() {
+         vindicatorRidable = getBoolean("mobs.vindicator.ridable", vindicatorRidable);
+         vindicatorRidableInWater = getBoolean("mobs.vindicator.ridable-in-water", vindicatorRidableInWater);
+         vindicatorControllable = getBoolean("mobs.vindicator.controllable", vindicatorControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.vindicator.attributes.max-health", vindicatorMaxHealth);
++            set("mobs.vindicator.attributes.max-health", null);
++            set("mobs.vindicator.attributes.max_health", oldValue);
++        }
++        vindicatorMaxHealth = getDouble("mobs.vindicator.attributes.max_health", vindicatorMaxHealth);
+     }
+ 
+     public boolean wanderingTraderRidable = false;
+     public boolean wanderingTraderRidableInWater = false;
+     public boolean wanderingTraderControllable = true;
++    public double wanderingTraderMaxHealth = 20.0D;
+     private void wanderingTraderSettings() {
+         wanderingTraderRidable = getBoolean("mobs.wandering_trader.ridable", wanderingTraderRidable);
+         wanderingTraderRidableInWater = getBoolean("mobs.wandering_trader.ridable-in-water", wanderingTraderRidableInWater);
+         wanderingTraderControllable = getBoolean("mobs.wandering_trader.controllable", wanderingTraderControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.wandering_trader.attributes.max-health", wanderingTraderMaxHealth);
++            set("mobs.wandering_trader.attributes.max-health", null);
++            set("mobs.wandering_trader.attributes.max_health", oldValue);
++        }
++        wanderingTraderMaxHealth = getDouble("mobs.wandering_trader.attributes.max_health", wanderingTraderMaxHealth);
+     }
+ 
+     public boolean witchRidable = false;
+     public boolean witchRidableInWater = false;
+     public boolean witchControllable = true;
++    public double witchMaxHealth = 26.0D;
+     private void witchSettings() {
+         witchRidable = getBoolean("mobs.witch.ridable", witchRidable);
+         witchRidableInWater = getBoolean("mobs.witch.ridable-in-water", witchRidableInWater);
+         witchControllable = getBoolean("mobs.witch.controllable", witchControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.witch.attributes.max-health", witchMaxHealth);
++            set("mobs.witch.attributes.max-health", null);
++            set("mobs.witch.attributes.max_health", oldValue);
++        }
++        witchMaxHealth = getDouble("mobs.witch.attributes.max_health", witchMaxHealth);
+     }
+ 
+     public boolean witherRidable = false;
+     public boolean witherRidableInWater = false;
+     public boolean witherControllable = true;
+     public double witherMaxY = 320D;
++    public double witherMaxHealth = 300.0D;
+     private void witherSettings() {
+         witherRidable = getBoolean("mobs.wither.ridable", witherRidable);
+         witherRidableInWater = getBoolean("mobs.wither.ridable-in-water", witherRidableInWater);
+         witherControllable = getBoolean("mobs.wither.controllable", witherControllable);
+         witherMaxY = getDouble("mobs.wither.ridable-max-y", witherMaxY);
++        if (PurpurConfig.version < 8) {
++            double oldValue = getDouble("mobs.wither.max-health", witherMaxHealth);
++            set("mobs.wither.max_health", null);
++            set("mobs.wither.attributes.max-health", oldValue);
++        } else if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.wither.attributes.max-health", witherMaxHealth);
++            set("mobs.wither.attributes.max-health", null);
++            set("mobs.wither.attributes.max_health", oldValue);
++        }
++        witherMaxHealth = getDouble("mobs.wither.attributes.max_health", witherMaxHealth);
+     }
+ 
+     public boolean witherSkeletonRidable = false;
+     public boolean witherSkeletonRidableInWater = false;
+     public boolean witherSkeletonControllable = true;
++    public double witherSkeletonMaxHealth = 20.0D;
+     private void witherSkeletonSettings() {
+         witherSkeletonRidable = getBoolean("mobs.wither_skeleton.ridable", witherSkeletonRidable);
+         witherSkeletonRidableInWater = getBoolean("mobs.wither_skeleton.ridable-in-water", witherSkeletonRidableInWater);
+         witherSkeletonControllable = getBoolean("mobs.wither_skeleton.controllable", witherSkeletonControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.wither_skeleton.attributes.max-health", witherSkeletonMaxHealth);
++            set("mobs.wither_skeleton.attributes.max-health", null);
++            set("mobs.wither_skeleton.attributes.max_health", oldValue);
++        }
++        witherSkeletonMaxHealth = getDouble("mobs.wither_skeleton.attributes.max_health", witherSkeletonMaxHealth);
+     }
+ 
+     public boolean wolfRidable = false;
+     public boolean wolfRidableInWater = false;
+     public boolean wolfControllable = true;
++    public double wolfMaxHealth = 8.0D;
+     private void wolfSettings() {
+         wolfRidable = getBoolean("mobs.wolf.ridable", wolfRidable);
+         wolfRidableInWater = getBoolean("mobs.wolf.ridable-in-water", wolfRidableInWater);
+         wolfControllable = getBoolean("mobs.wolf.controllable", wolfControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.wolf.attributes.max-health", wolfMaxHealth);
++            set("mobs.wolf.attributes.max-health", null);
++            set("mobs.wolf.attributes.max_health", oldValue);
++        }
++        wolfMaxHealth = getDouble("mobs.wolf.attributes.max_health", wolfMaxHealth);
+     }
+ 
+     public boolean zoglinRidable = false;
+     public boolean zoglinRidableInWater = false;
+     public boolean zoglinControllable = true;
++    public double zoglinMaxHealth = 40.0D;
+     private void zoglinSettings() {
+         zoglinRidable = getBoolean("mobs.zoglin.ridable", zoglinRidable);
+         zoglinRidableInWater = getBoolean("mobs.zoglin.ridable-in-water", zoglinRidableInWater);
+         zoglinControllable = getBoolean("mobs.zoglin.controllable", zoglinControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.zoglin.attributes.max-health", zoglinMaxHealth);
++            set("mobs.zoglin.attributes.max-health", null);
++            set("mobs.zoglin.attributes.max_health", oldValue);
++        }
++        zoglinMaxHealth = getDouble("mobs.zoglin.attributes.max_health", zoglinMaxHealth);
+     }
+ 
+     public boolean zombieRidable = false;
+     public boolean zombieRidableInWater = false;
+     public boolean zombieControllable = true;
++    public double zombieMaxHealth = 20.0D;
++    public double zombieSpawnReinforcements = 0.1D;
+     private void zombieSettings() {
+         zombieRidable = getBoolean("mobs.zombie.ridable", zombieRidable);
+         zombieRidableInWater = getBoolean("mobs.zombie.ridable-in-water", zombieRidableInWater);
+         zombieControllable = getBoolean("mobs.zombie.controllable", zombieControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.zombie.attributes.max-health", zombieMaxHealth);
++            set("mobs.zombie.attributes.max-health", null);
++            set("mobs.zombie.attributes.max_health", oldValue);
++        }
++        zombieMaxHealth = getDouble("mobs.zombie.attributes.max_health", zombieMaxHealth);
++        zombieSpawnReinforcements = getDouble("mobs.zombie.attributes.spawn_reinforcements", zombieSpawnReinforcements);
+     }
+ 
+     public boolean zombieHorseRidableInWater = false;
+     public boolean zombieHorseCanSwim = false;
++    public double zombieHorseMaxHealthMin = 15.0D;
++    public double zombieHorseMaxHealthMax = 15.0D;
++    public double zombieHorseJumpStrengthMin = 0.4D;
++    public double zombieHorseJumpStrengthMax = 1.0D;
++    public double zombieHorseMovementSpeedMin = 0.2D;
++    public double zombieHorseMovementSpeedMax = 0.2D;
+     private void zombieHorseSettings() {
+         zombieHorseRidableInWater = getBoolean("mobs.zombie_horse.ridable-in-water", zombieHorseRidableInWater);
+         zombieHorseCanSwim = getBoolean("mobs.zombie_horse.can-swim", zombieHorseCanSwim);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.zombie_horse.attributes.max-health", zombieHorseMaxHealthMin);
++            set("mobs.zombie_horse.attributes.max-health", null);
++            set("mobs.zombie_horse.attributes.max_health.min", oldValue);
++            set("mobs.zombie_horse.attributes.max_health.max", oldValue);
++        }
++        zombieHorseMaxHealthMin = getDouble("mobs.zombie_horse.attributes.max_health.min", zombieHorseMaxHealthMin);
++        zombieHorseMaxHealthMax = getDouble("mobs.zombie_horse.attributes.max_health.max", zombieHorseMaxHealthMax);
++        zombieHorseJumpStrengthMin = getDouble("mobs.zombie_horse.attributes.jump_strength.min", zombieHorseJumpStrengthMin);
++        zombieHorseJumpStrengthMax = getDouble("mobs.zombie_horse.attributes.jump_strength.max", zombieHorseJumpStrengthMax);
++        zombieHorseMovementSpeedMin = getDouble("mobs.zombie_horse.attributes.movement_speed.min", zombieHorseMovementSpeedMin);
++        zombieHorseMovementSpeedMax = getDouble("mobs.zombie_horse.attributes.movement_speed.max", zombieHorseMovementSpeedMax);
+     }
+ 
+     public boolean zombieVillagerRidable = false;
+     public boolean zombieVillagerRidableInWater = false;
+     public boolean zombieVillagerControllable = true;
++    public double zombieVillagerMaxHealth = 20.0D;
++    public double zombieVillagerSpawnReinforcements = 0.1D;
+     private void zombieVillagerSettings() {
+         zombieVillagerRidable = getBoolean("mobs.zombie_villager.ridable", zombieVillagerRidable);
+         zombieVillagerRidableInWater = getBoolean("mobs.zombie_villager.ridable-in-water", zombieVillagerRidableInWater);
+         zombieVillagerControllable = getBoolean("mobs.zombie_villager.controllable", zombieVillagerControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.zombie_villager.attributes.max-health", zombieVillagerMaxHealth);
++            set("mobs.zombie_villager.attributes.max-health", null);
++            set("mobs.zombie_villager.attributes.max_health", oldValue);
++        }
++        zombieVillagerMaxHealth = getDouble("mobs.zombie_villager.attributes.max_health", zombieVillagerMaxHealth);
++        zombieVillagerSpawnReinforcements = getDouble("mobs.zombie_villager.attributes.spawn_reinforcements", zombieVillagerSpawnReinforcements);
+     }
+ 
+     public boolean zombifiedPiglinRidable = false;
+     public boolean zombifiedPiglinRidableInWater = false;
+     public boolean zombifiedPiglinControllable = true;
++    public double zombifiedPiglinMaxHealth = 20.0D;
++    public double zombifiedPiglinSpawnReinforcements = 0.0D;
+     private void zombifiedPiglinSettings() {
+         zombifiedPiglinRidable = getBoolean("mobs.zombified_piglin.ridable", zombifiedPiglinRidable);
+         zombifiedPiglinRidableInWater = getBoolean("mobs.zombified_piglin.ridable-in-water", zombifiedPiglinRidableInWater);
+         zombifiedPiglinControllable = getBoolean("mobs.zombified_piglin.controllable", zombifiedPiglinControllable);
++        if (PurpurConfig.version < 10) {
++            double oldValue = getDouble("mobs.zombified_piglin.attributes.max-health", zombifiedPiglinMaxHealth);
++            set("mobs.zombified_piglin.attributes.max-health", null);
++            set("mobs.zombified_piglin.attributes.max_health", oldValue);
++        }
++        zombifiedPiglinMaxHealth = getDouble("mobs.zombified_piglin.attributes.max_health", zombifiedPiglinMaxHealth);
++        zombifiedPiglinSpawnReinforcements = getDouble("mobs.zombified_piglin.attributes.spawn_reinforcements", zombifiedPiglinSpawnReinforcements);
+     }
+ }

@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DoctaEnkoda <bierquejason@gmail.com>
+Date: Thu, 27 May 2021 06:46:30 +0200
+Subject: [PATCH] Bee can work when raining or at night
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 0c0c900d07d2869baa5fdd669ceecf4ad3477807..c69d0cc9ed74e4e06465aebff07b6b50c227fb28 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -411,7 +411,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+ 
+     boolean wantsToEnterHive() {
+         if (this.stayOutOfHiveCountdown <= 0 && !this.beePollinateGoal.isPollinating() && !this.hasStung() && this.getTarget() == null) {
+-            boolean flag = this.isTiredOfLookingForNectar() || this.level.isRaining() || this.level.isNight() || this.hasNectar();
++            boolean flag = this.isTiredOfLookingForNectar() || (this.level.isRaining() && !this.level.purpurConfig.beeCanWorkInRain) || (this.level.isNight() && !this.level.purpurConfig.beeCanWorkAtNight) || this.hasNectar(); // Purpur
+ 
+             return flag && !this.isHiveNearFire();
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+index 375f25807ca0f35784653d8fbe4e5086d7033e99..096308b577c68502fed1f4c10c0dfc2a9c3515e8 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+@@ -202,7 +202,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+     }
+ 
+     private static boolean releaseBee(Level world, BlockPos blockposition, BlockState iblockdata, BeehiveBlockEntity.BeeData tileentitybeehive_hivebee, @Nullable List<Entity> list, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, @Nullable BlockPos blockposition1, boolean force) {
+-        if (!force && (world.isNight() || world.isRaining()) && tileentitybeehive_releasestatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) {
++        if (!force && ((world.isNight() && !world.purpurConfig.beeCanWorkAtNight) || (world.isRaining() && !world.purpurConfig.beeCanWorkInRain)) && tileentitybeehive_releasestatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) { // Purpur
+             // CraftBukkit end
+             return false;
+         } else {
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+index 16de2736966c52994836377418d7f642789f91b0..1e0d78ae199e7d3a240b94e44128e254c4762f7f 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+@@ -759,6 +759,8 @@ public class PurpurWorldConfig {
+     public double beeMaxHealth = 10.0D;
+     public int beeBreedingTicks = 6000;
+     public boolean beeTakeDamageFromWater = false;
++    public boolean beeCanWorkAtNight = false;
++    public boolean beeCanWorkInRain = false;
+     private void beeSettings() {
+         beeRidable = getBoolean("mobs.bee.ridable", beeRidable);
+         beeRidableInWater = getBoolean("mobs.bee.ridable-in-water", beeRidableInWater);
+@@ -772,6 +774,8 @@ public class PurpurWorldConfig {
+         beeMaxHealth = getDouble("mobs.bee.attributes.max_health", beeMaxHealth);
+         beeBreedingTicks = getInt("mobs.bee.breeding-delay-ticks", beeBreedingTicks);
+         beeTakeDamageFromWater = getBoolean("mobs.bee.takes-damage-from-water", beeTakeDamageFromWater);
++        beeCanWorkAtNight = getBoolean("mobs.bee.can-work-at-night", beeCanWorkAtNight);
++        beeCanWorkInRain = getBoolean("mobs.bee.can-work-in-rain", beeCanWorkInRain);
+     }
+ 
+     public boolean blazeRidable = false;
